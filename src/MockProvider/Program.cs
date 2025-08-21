@@ -17,4 +17,9 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 app.MapControllers();
 
+// Lightweight ping endpoint for health checks
+app.MapGet("/api/ping", () => Results.Ok(new { ok = true, ts = DateTime.UtcNow }))
+   .WithName("Ping")
+   .WithOpenApi();
+
 app.Run();

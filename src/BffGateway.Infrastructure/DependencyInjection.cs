@@ -17,6 +17,9 @@ public static class DependencyInjection
         // Configure provider options
         services.Configure<ProviderOptions>(configuration.GetSection(ProviderOptions.SectionName));
 
+        // Register delegating handler
+        services.AddTransient<ForwardHeadersHandler>();
+
         // Add HTTP client with Polly policies
         services.AddHttpClient<IProviderClient, ProviderClient>((serviceProvider, client) =>
         {
@@ -24,12 +27,17 @@ public static class DependencyInjection
             client.BaseAddress = new Uri(options.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
         })
-        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+        .ConfigurePrimaryHttpMessageHandler((serviceProvider) =>
         {
-            // Configure connection timeout
-            // Note: HttpClientHandler doesn't directly support ConnectTimeout in .NET
-            // This would typically be configured at the infrastructure level
+            var options = serviceProvider.GetRequiredService<IOptions<ProviderOptions>>().Value;
+            return new SocketsHttpHandler
+            {
+                ConnectTimeout = TimeSpan.FromSeconds(options.ConnectTimeoutSeconds),
+                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate,
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            };
         })
+        .AddHttpMessageHandler<ForwardHeadersHandler>()
         .AddPolicyHandler((serviceProvider, request) =>
         {
             var options = serviceProvider.GetRequiredService<IOptions<ProviderOptions>>().Value;

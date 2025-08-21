@@ -8,16 +8,20 @@ const responseTime = new Trend("response_time");
 
 // Test configuration
 export const options = {
-  stages: [
-    { duration: "1m", target: 100 }, // Ramp up to 100 users over 1 minute
-    { duration: "2m", target: 500 }, // Ramp up to 500 users over 2 minutes
-    { duration: "5m", target: 1000 }, // Maintain 1000 users for 5 minutes
-    { duration: "2m", target: 0 }, // Ramp down to 0 users over 2 minutes
-  ],
+  scenarios: {
+    sustained_load: {
+      executor: "constant-arrival-rate",
+      rate: 1000, // 1000 iterations per second
+      timeUnit: "1s",
+      duration: "10m",
+      preAllocatedVUs: 200,
+      maxVUs: 2000,
+    },
+  },
   thresholds: {
-    http_req_duration: ["p(95)<150"], // 95% of requests must be below 150ms
-    error_rate: ["rate<0.01"], // Error rate must be below 1%
-    http_req_failed: ["rate<0.01"], // HTTP error rate must be below 1%
+    http_req_duration: ["p(95)<150"],
+    error_rate: ["rate<0.01"],
+    http_req_failed: ["rate<0.01"],
   },
 };
 

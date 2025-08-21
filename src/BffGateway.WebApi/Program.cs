@@ -5,6 +5,8 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using System.Reflection;
+using BffGateway.WebApi.Middleware;
+using BffGateway.WebApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,10 +38,11 @@ builder.Services.AddValidatorsFromAssembly(applicationAssembly);
 // Add Infrastructure layer
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Correlation and context services
+builder.Services.AddHttpContextAccessor();
+
 // Add health checks
-builder.Services.AddHealthChecks()
-    .AddCheck<ProviderHealthCheck>("provider")
-    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy());
+builder.Services.AddBffHealthChecks();
 
 // Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -71,16 +74,11 @@ app.UseSerilogRequestLogging();
 
 app.UseRouting();
 
-// Health check endpoints
-app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-{
-    Predicate = check => check.Name == "self"
-});
+// Correlation ID middleware
+app.UseMiddleware<CorrelationIdMiddleware>();
 
-app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-{
-    Predicate = _ => true
-});
+// Health check endpoints
+app.MapBffHealthChecks();
 
 app.MapControllers();
 

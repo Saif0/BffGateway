@@ -109,7 +109,7 @@ public class ProviderClient : IProviderClient
             _logger.LogDebug("Performing provider health check");
 
             // Use a lightweight request to check provider health
-            var response = await _httpClient.GetAsync("/api/authenticate", cancellationToken);
+            var response = await _httpClient.GetAsync("/api/ping", cancellationToken);
 
             var isHealthy = response.StatusCode != System.Net.HttpStatusCode.ServiceUnavailable;
 
