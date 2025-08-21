@@ -3,7 +3,7 @@
 SHELL := /bin/bash
 ROOT := $(PWD)
 
-.PHONY: help build clean run-all run-gateway run-provider stop scripts tests load bench
+.PHONY: help build clean run-all run-gateway run-provider stop scripts tests load bench provider-load provider-load-quick provider-load-heavy
 
 help:
 	@echo "Available commands:"
@@ -16,7 +16,18 @@ help:
 	@echo "  make scripts       - Run endpoint smoke tests script"
 	@echo "  make tests         - Alias for scripts (endpoint tests)"
 	@echo "  make load          - Run k6 load test (requires k6 installed)"
+	@echo "  make provider-load - Run provider k6 test (env tunables below)"
+	@echo "  make provider-load-quick - Quick 1m provider test"
+	@echo "  make provider-load-heavy - Heavier 10m provider test"
 	@echo "  make bench         - Run benchmarks project"
+
+# Provider load test defaults (override like: make provider-load AUTH_RPS=300 DURATION=10m)
+PROVIDER_BASE_URL ?= http://localhost:5001
+AUTH_RPS ?= 200
+PAY_RPS ?= 200
+DURATION ?= 5m
+PREALLOC_VUS ?= 50
+MAX_VUS ?= 500
 
 build:
 	dotnet build --nologo -clp:Summary -v:m
@@ -58,6 +69,23 @@ tests: scripts
 load:
 	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
 	k6 run performance/load-test.js
+
+provider-load:
+	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
+	@echo "Running provider load: $(AUTH_RPS)/s auth, $(PAY_RPS)/s pay for $(DURATION) against $(PROVIDER_BASE_URL)"
+	PROVIDER_BASE_URL=$(PROVIDER_BASE_URL) \
+	AUTH_RPS=$(AUTH_RPS) \
+	PAY_RPS=$(PAY_RPS) \
+	DURATION=$(DURATION) \
+	PREALLOC_VUS=$(PREALLOC_VUS) \
+	MAX_VUS=$(MAX_VUS) \
+	k6 run performance/provider-load-test.js
+
+provider-load-quick:
+	$(MAKE) provider-load AUTH_RPS=10 PAY_RPS=10 DURATION=1m PREALLOC_VUS=20 MAX_VUS=50
+
+provider-load-heavy:
+	$(MAKE) provider-load AUTH_RPS=300 PAY_RPS=300 DURATION=10m PREALLOC_VUS=150 MAX_VUS=2000
 
 bench:
 	@echo "Running benchmarks..."
