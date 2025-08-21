@@ -47,6 +47,11 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "BFF Gateway API", Version = "v1" });
     c.SwaggerDoc("v2", new() { Title = "BFF Gateway API", Version = "v2" });
+    c.DocInclusionPredicate((docName, apiDesc) =>
+    {
+        var groupName = apiDesc.GroupName ?? apiDesc.ActionDescriptor.DisplayName;
+        return string.Equals(docName, groupName, StringComparison.OrdinalIgnoreCase);
+    });
 });
 
 var app = builder.Build();

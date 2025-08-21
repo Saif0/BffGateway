@@ -8,6 +8,7 @@ namespace BffGateway.WebApi.Controllers.V2;
 [ApiController]
 [ApiVersion("2.0")]
 [Route("v{version:apiVersion}/auth")]
+[ApiExplorerSettings(GroupName = "v2")]
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;

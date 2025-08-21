@@ -8,6 +8,7 @@ namespace BffGateway.WebApi.Controllers.V1;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/payments")]
+[ApiExplorerSettings(GroupName = "v1")]
 public class PaymentsController : ControllerBase
 {
     private readonly IMediator _mediator;
