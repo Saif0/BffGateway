@@ -1,10 +1,11 @@
-using BffGateway.Application.Common.Interfaces;
+using BffGateway.Application.Abstractions.Providers;
+using BffGateway.Application.Common.DTOs;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace BffGateway.Application.Auth.Commands;
+namespace BffGateway.Application.Commands.Auth.Login;
 
-public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
+public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDTO>
 {
     private readonly IProviderClient _providerClient;
     private readonly ILogger<LoginCommandHandler> _logger;
@@ -15,7 +16,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         _logger = logger;
     }
 
-    public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
+    public async Task<LoginResponseDTO> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing login request for username: {Username}", request.Username);
 
@@ -24,7 +25,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
             var providerRequest = new ProviderAuthRequest(request.Username, request.Password);
             var providerResponse = await _providerClient.AuthenticateAsync(providerRequest, cancellationToken);
 
-            var response = new LoginResponse(
+            var response = new LoginResponseDTO(
                 providerResponse.Success,
                 providerResponse.Success ? providerResponse.Token : null,
                 providerResponse.Success ? providerResponse.ExpiresAt : null
@@ -38,7 +39,9 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing login request for username: {Username}", request.Username);
-            return new LoginResponse(false, null, null);
+            return new LoginResponseDTO(false, null, null);
         }
     }
 }
+
+

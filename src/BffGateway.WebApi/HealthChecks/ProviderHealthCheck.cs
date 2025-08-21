@@ -1,4 +1,4 @@
-using BffGateway.Application.Common.Interfaces;
+using BffGateway.Application.Abstractions.Providers;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace BffGateway.WebApi.HealthChecks;

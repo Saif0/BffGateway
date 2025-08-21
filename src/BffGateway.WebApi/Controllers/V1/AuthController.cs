@@ -1,4 +1,4 @@
-using BffGateway.Application.Auth.Commands;
+using BffGateway.Application.Commands.Auth.Login;
 using BffGateway.WebApi.Models.V1;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

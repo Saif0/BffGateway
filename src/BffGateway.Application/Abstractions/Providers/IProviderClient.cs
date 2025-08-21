@@ -1,6 +1,6 @@
 using BffGateway.Application.Common.DTOs;
 
-namespace BffGateway.Application.Common.Interfaces;
+namespace BffGateway.Application.Abstractions.Providers;
 
 public interface IProviderClient
 {
@@ -8,3 +8,5 @@ public interface IProviderClient
     Task<ProviderPaymentResponse> ProcessPaymentAsync(ProviderPaymentRequest request, CancellationToken cancellationToken = default);
     Task<bool> HealthCheckAsync(CancellationToken cancellationToken = default);
 }
+
+

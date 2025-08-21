@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
-using BffGateway.Application.Common.Interfaces;
+using BffGateway.Application.Abstractions.Providers;
+using BffGateway.Application.Common.DTOs;
 using Microsoft.Extensions.Logging;
 
 namespace BffGateway.Infrastructure.Providers;

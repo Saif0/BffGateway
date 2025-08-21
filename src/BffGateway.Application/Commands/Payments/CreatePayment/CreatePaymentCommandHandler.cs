@@ -1,10 +1,11 @@
-using BffGateway.Application.Common.Interfaces;
+using BffGateway.Application.Abstractions.Providers;
+using BffGateway.Application.Common.DTOs;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace BffGateway.Application.Payments.Commands;
+namespace BffGateway.Application.Commands.Payments.CreatePayment;
 
-public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand, CreatePaymentResponse>
+public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand, CreatePaymentResponseDTO>
 {
     private readonly IProviderClient _providerClient;
     private readonly ILogger<CreatePaymentCommandHandler> _logger;
@@ -15,7 +16,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         _logger = logger;
     }
 
-    public async Task<CreatePaymentResponse> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
+    public async Task<CreatePaymentResponseDTO> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing payment request for amount: {Amount} {Currency} to {DestinationAccount}",
             request.Amount, request.Currency, request.DestinationAccount);
@@ -25,7 +26,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
             var providerRequest = new ProviderPaymentRequest(request.Amount, request.Currency, request.DestinationAccount);
             var providerResponse = await _providerClient.ProcessPaymentAsync(providerRequest, cancellationToken);
 
-            var response = new CreatePaymentResponse(
+            var response = new CreatePaymentResponseDTO(
                 providerResponse.Success,
                 providerResponse.Success ? providerResponse.TransactionId : null,
                 providerResponse.Success ? providerResponse.ProviderRef : null,
@@ -41,7 +42,9 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         {
             _logger.LogError(ex, "Error processing payment request for amount: {Amount} {Currency}",
                 request.Amount, request.Currency);
-            return new CreatePaymentResponse(false, null, null, null);
+            return new CreatePaymentResponseDTO(false, null, null, null);
         }
     }
 }
+
+

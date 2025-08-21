@@ -1,4 +1,4 @@
-using BffGateway.Application.Common.Interfaces;
+using BffGateway.Application.Abstractions.Providers;
 using BffGateway.Infrastructure.Configuration;
 using BffGateway.Infrastructure.Providers;
 using Microsoft.Extensions.Configuration;

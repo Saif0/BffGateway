@@ -1,7 +1,6 @@
-using BffGateway.Application.Payments.Commands;
 using FluentValidation;
 
-namespace BffGateway.Application.Payments.Validators;
+namespace BffGateway.Application.Commands.Payments.CreatePayment;
 
 public class CreatePaymentCommandValidator : AbstractValidator<CreatePaymentCommand>
 {
@@ -33,3 +32,5 @@ public class CreatePaymentCommandValidator : AbstractValidator<CreatePaymentComm
         return SupportedCurrencies.Contains(currency?.ToUpperInvariant());
     }
 }
+
+

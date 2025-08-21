@@ -1,4 +1,4 @@
-using BffGateway.Application.Payments.Commands;
+using BffGateway.Application.Commands.Payments.CreatePayment;
 using BffGateway.WebApi.Models.V1;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

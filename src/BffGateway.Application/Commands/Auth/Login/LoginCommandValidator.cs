@@ -1,7 +1,6 @@
-using BffGateway.Application.Auth.Commands;
 using FluentValidation;
 
-namespace BffGateway.Application.Auth.Validators;
+namespace BffGateway.Application.Commands.Auth.Login;
 
 public class LoginCommandValidator : AbstractValidator<LoginCommand>
 {
@@ -20,3 +19,5 @@ public class LoginCommandValidator : AbstractValidator<LoginCommand>
             .WithMessage("Password is required");
     }
 }
+
+
