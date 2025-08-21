@@ -85,7 +85,7 @@ provider-load-quick:
 	$(MAKE) provider-load AUTH_RPS=10 PAY_RPS=10 DURATION=1m PREALLOC_VUS=20 MAX_VUS=50
 
 provider-load-heavy:
-	$(MAKE) provider-load AUTH_RPS=300 PAY_RPS=300 DURATION=10m PREALLOC_VUS=150 MAX_VUS=2000
+	$(MAKE) provider-load AUTH_RPS=500 PAY_RPS=500 DURATION=10m PREALLOC_VUS=200 MAX_VUS=2000
 
 bench:
 	@echo "Running benchmarks..."

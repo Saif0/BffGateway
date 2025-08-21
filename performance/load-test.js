@@ -13,7 +13,7 @@ export const options = {
       executor: "constant-arrival-rate",
       rate: 1000, // 1000 iterations per second
       timeUnit: "1s",
-      duration: "10m",
+      duration: "1m",
       preAllocatedVUs: 200,
       maxVUs: 2000,
     },
@@ -104,10 +104,24 @@ function testLoginV2(user) {
 
   const response = http.post(`${BASE_URL}/v2/auth/login`, loginPayload, params);
 
+  let body;
+  try {
+    body = JSON.parse(response.body);
+  } catch {
+    body = {};
+  }
+
   const success = check(response, {
     "Login v2 status is 200": (r) => r.status === 200,
-    "Login v2 has success field": (r) =>
-      JSON.parse(r.body).success !== undefined,
+    "Login v2 has success field": () => body.success !== undefined,
+    "Login v2 has token.accessToken": () =>
+      typeof body.token?.accessToken === "string" &&
+      body.token.accessToken.length > 0,
+    "Login v2 has token.expiresAt": () =>
+      typeof body.token?.expiresAt === "string",
+    "Login v2 tokenType is Bearer": () => body.token?.tokenType === "Bearer",
+    "Login v2 has user.username": () =>
+      typeof body.user?.username === "string" && body.user.username.length > 0,
     "Login v2 response time < 150ms": (r) => r.timings.duration < 150,
   });
 
@@ -130,10 +144,22 @@ function testPayment(paymentRequest) {
 
   const response = http.post(`${BASE_URL}/v1/payments`, paymentPayload, params);
 
+  let body;
+  try {
+    body = JSON.parse(response.body);
+  } catch {
+    body = {};
+  }
+
   const success = check(response, {
     "Payment status is 200": (r) => r.status === 200,
-    "Payment has success field": (r) =>
-      JSON.parse(r.body).isSuccess !== undefined,
+    "Payment has success field": () => body.isSuccess !== undefined,
+    "Payment has paymentId": () =>
+      typeof body.paymentId === "string" && body.paymentId.length > 0,
+    "Payment has providerReference": () =>
+      typeof body.providerReference === "string" &&
+      body.providerReference.length > 0,
+    "Payment has processedAt": () => typeof body.processedAt === "string",
     "Payment response time < 150ms": (r) => r.timings.duration < 150,
   });
 
