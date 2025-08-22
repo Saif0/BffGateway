@@ -74,11 +74,11 @@ load:
 	k6 run performance/load-test.js
 
 # BFF load test defaults (override like: make bff-load BFF_RPS=1500 BFF_DURATION=10m)
-BFF_BASE_URL ?= http://localhost:5000
+BFF_BASE_URL ?= http://my-app.dev:5000
 BFF_RPS ?= 1000
 BFF_DURATION ?= 1m
 BFF_PREALLOC_VUS ?= 200
-BFF_MAX_VUS ?= 2000
+BFF_MAX_VUS ?= 1000
 
 bff-load:
 	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
@@ -91,7 +91,7 @@ bff-load:
 	k6 run performance/load-test.js
 
 bff-load-quick:
-	$(MAKE) bff-load BFF_RPS=50 BFF_DURATION=1m BFF_PREALLOC_VUS=20 BFF_MAX_VUS=200
+	$(MAKE) bff-load BFF_RPS=50 BFF_DURATION=1m BFF_PREALLOC_VUS=20 BFF_MAX_VUS=1000
 
 bff-load-heavy:
 	$(MAKE) bff-load BFF_RPS=1000 BFF_DURATION=10m BFF_PREALLOC_VUS=200 BFF_MAX_VUS=2000
@@ -108,7 +108,7 @@ provider-load:
 	k6 run performance/provider-load-test.js
 
 provider-load-quick:
-	$(MAKE) provider-load AUTH_RPS=10 PAY_RPS=10 DURATION=1m PREALLOC_VUS=20 MAX_VUS=50
+	$(MAKE) provider-load AUTH_RPS=10 PAY_RPS=10 DURATION=1m PREALLOC_VUS=20 MAX_VUS=2000
 
 provider-load-heavy:
 	$(MAKE) provider-load AUTH_RPS=500 PAY_RPS=500 DURATION=10m PREALLOC_VUS=200 MAX_VUS=2000

@@ -1,14 +1,15 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { Rate, Trend } from "k6/metrics";
+import { provider } from "./config.js";
 
-// Environment-driven config with sensible defaults
-const BASE_URL = __ENV.PROVIDER_BASE_URL || "http://localhost:5001";
-const AUTH_RPS = Number(__ENV.AUTH_RPS || 200);
-const PAY_RPS = Number(__ENV.PAY_RPS || 200);
-const TEST_DURATION = __ENV.DURATION || "5m";
-const PREALLOC_VUS = Number(__ENV.PREALLOC_VUS || 50);
-const MAX_VUS = Number(__ENV.MAX_VUS || 500);
+// Unified provider config
+const BASE_URL = provider.baseUrl;
+const AUTH_RPS = provider.authRps;
+const PAY_RPS = provider.payRps;
+const TEST_DURATION = provider.duration;
+const PREALLOC_VUS = provider.preAllocatedVUs;
+const MAX_VUS = provider.maxVUs;
 
 // Custom metrics
 const authDuration = new Trend("auth_duration");
@@ -38,11 +39,11 @@ export const options = {
     },
   },
   thresholds: {
-    http_req_failed: ["rate<0.01"],
-    auth_duration: ["p(95)<80"],
-    pay_duration: ["p(95)<80"],
-    auth_error_rate: ["rate<0.01"],
-    pay_error_rate: ["rate<0.01"],
+    http_req_failed: [`rate<${provider.maxHttpFailRate}`],
+    auth_duration: [`p(95)<${provider.authP95Ms}`],
+    pay_duration: [`p(95)<${provider.payP95Ms}`],
+    auth_error_rate: [`rate<${provider.maxErrorRate}`],
+    pay_error_rate: [`rate<${provider.maxErrorRate}`],
   },
 };
 

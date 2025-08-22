@@ -1,34 +1,30 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { Rate, Trend } from "k6/metrics";
+import { bff } from "./config.js";
 
 // Custom metrics
 const errorRate = new Rate("error_rate");
 const responseTime = new Trend("response_time");
 
-// Env-driven config
-const BFF_BASE_URL = __ENV.BFF_BASE_URL || "http://localhost:5000";
-const BFF_RPS = Number(__ENV.BFF_RPS || 1000);
-const BFF_DURATION = __ENV.BFF_DURATION || "1m";
-const BFF_PREALLOC_VUS = Number(__ENV.BFF_PREALLOC_VUS || 200);
-const BFF_MAX_VUS = Number(__ENV.BFF_MAX_VUS || 2000);
+// Unified config imported from config.js
 
 // Test configuration
 export const options = {
   scenarios: {
     sustained_load: {
       executor: "constant-arrival-rate",
-      rate: BFF_RPS,
+      rate: bff.rps,
       timeUnit: "1s",
-      duration: BFF_DURATION,
-      preAllocatedVUs: BFF_PREALLOC_VUS,
-      maxVUs: BFF_MAX_VUS,
+      duration: bff.duration,
+      preAllocatedVUs: bff.preAllocatedVUs,
+      maxVUs: bff.maxVUs,
     },
   },
   thresholds: {
-    http_req_duration: ["p(95)<150"],
-    error_rate: ["rate<0.01"],
-    http_req_failed: ["rate<0.01"],
+    http_req_duration: [`p(95)<${bff.p95Ms}`],
+    error_rate: [`rate<${bff.maxErrorRate}`],
+    http_req_failed: [`rate<${bff.maxHttpFailRate}`],
   },
 };
 
@@ -47,7 +43,7 @@ const paymentRequests = [
 
 export function setup() {
   // Health check before starting the test
-  const healthResponse = http.get(`${BFF_BASE_URL}/health/ready`);
+  const healthResponse = http.get(`${bff.baseUrl}/health/ready`);
   check(healthResponse, {
     "Health check passed": (r) => r.status === 200,
   });
@@ -83,7 +79,7 @@ function testLoginV1(user) {
   };
 
   const response = http.post(
-    `${BFF_BASE_URL}/v1/auth/login`,
+    `${bff.baseUrl}/v1/auth/login`,
     loginPayload,
     params
   );
@@ -112,7 +108,7 @@ function testLoginV2(user) {
   };
 
   const response = http.post(
-    `${BFF_BASE_URL}/v2/auth/login`,
+    `${bff.baseUrl}/v2/auth/login`,
     loginPayload,
     params
   );
@@ -156,7 +152,7 @@ function testPayment(paymentRequest) {
   };
 
   const response = http.post(
-    `${BFF_BASE_URL}/v1/payments`,
+    `${bff.baseUrl}/v1/payments`,
     paymentPayload,
     params
   );
@@ -186,7 +182,7 @@ function testPayment(paymentRequest) {
 
 export function teardown(data) {
   // Final health check
-  const healthResponse = http.get(`${BFF_BASE_URL}/health/ready`);
+  const healthResponse = http.get(`${bff.baseUrl}/health/ready`);
   check(healthResponse, {
     "Final health check passed": (r) => r.status === 200,
   });
