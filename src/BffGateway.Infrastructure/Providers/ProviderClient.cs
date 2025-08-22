@@ -1,5 +1,7 @@
 using System.Text;
 using System.Text.Json;
+using System.Diagnostics;
+using Polly.CircuitBreaker;
 using BffGateway.Application.Abstractions.Providers;
 using BffGateway.Application.Common.DTOs;
 using Microsoft.Extensions.Logging;
@@ -24,21 +26,24 @@ public class ProviderClient : IProviderClient
 
     public async Task<ProviderAuthResponse> AuthenticateAsync(ProviderAuthRequest request, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Calling provider authentication for user: {User}", request.User);
+        _logger.LogInformation("Calling provider authentication");
 
         try
         {
             var json = JsonSerializer.Serialize(request, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
+            var sw = Stopwatch.StartNew();
             var response = await _httpClient.PostAsync("/api/authenticate", content, cancellationToken);
+            sw.Stop();
+
+            _logger.LogInformation("Provider call {Path} ended with {StatusCode} in {ElapsedMs}ms",
+                "/api/authenticate", (int)response.StatusCode, sw.ElapsedMilliseconds);
 
             if (response.IsSuccessStatusCode)
             {
                 var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
                 var providerResponse = JsonSerializer.Deserialize<ProviderAuthResponseDto>(responseJson, _jsonOptions);
-
-                _logger.LogInformation("Provider authentication successful for user: {User}", request.User);
 
                 return new ProviderAuthResponse(
                     providerResponse?.Success ?? false,
@@ -48,14 +53,19 @@ public class ProviderClient : IProviderClient
             }
             else
             {
-                _logger.LogWarning("Provider authentication failed for user: {User}, Status: {StatusCode}",
-                    request.User, response.StatusCode);
+                _logger.LogWarning("Provider authentication failed with status {StatusCode}",
+                    response.StatusCode);
                 return new ProviderAuthResponse(false, string.Empty, DateTime.MinValue);
             }
         }
+        catch (BrokenCircuitException bce)
+        {
+            _logger.LogWarning(bce, "Circuit breaker open for {Path}", "/api/authenticate");
+            throw;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during provider authentication for user: {User}", request.User);
+            _logger.LogError(ex, "Error during provider authentication");
             return new ProviderAuthResponse(false, string.Empty, DateTime.MinValue);
         }
     }
@@ -70,7 +80,12 @@ public class ProviderClient : IProviderClient
             var json = JsonSerializer.Serialize(request, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
+            var sw = Stopwatch.StartNew();
             var response = await _httpClient.PostAsync("/api/pay", content, cancellationToken);
+            sw.Stop();
+
+            _logger.LogInformation("Provider call {Path} ended with {StatusCode} in {ElapsedMs}ms",
+                "/api/pay", (int)response.StatusCode, sw.ElapsedMilliseconds);
 
             if (response.IsSuccessStatusCode)
             {
@@ -93,6 +108,11 @@ public class ProviderClient : IProviderClient
                     request.Total, request.Curr, response.StatusCode);
                 return new ProviderPaymentResponse(false, string.Empty, string.Empty, DateTime.MinValue);
             }
+        }
+        catch (BrokenCircuitException bce)
+        {
+            _logger.LogWarning(bce, "Circuit breaker open for {Path}", "/api/pay");
+            throw;
         }
         catch (Exception ex)
         {

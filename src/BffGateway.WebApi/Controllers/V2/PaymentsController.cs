@@ -1,16 +1,15 @@
 using BffGateway.Application.Commands.Payments.CreatePayment;
-using BffGateway.WebApi.Models.V1;
+using BffGateway.WebApi.Models.V2;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System;
 
-namespace BffGateway.WebApi.Controllers.V1;
+namespace BffGateway.WebApi.Controllers.V2;
 
 [ApiController]
-[ApiVersion("1.0")]
+[ApiVersion("2.0")]
 [Route("v{version:apiVersion}/payments")]
-[ApiExplorerSettings(GroupName = "v1")]
-[Obsolete("v1 is deprecated; use v2")]
+[ApiExplorerSettings(GroupName = "v2")]
 public class PaymentsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -23,7 +22,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<CreatePaymentResponseV1>> CreatePayment([FromBody] CreatePaymentRequestV1 request, CancellationToken cancellationToken)
+    public async Task<ActionResult<CreatePaymentResponseV2>> CreatePayment([FromBody] CreatePaymentRequestV2 request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Payment request received for amount: {Amount} {Currency} to {DestinationAccount}",
             request.Amount, request.Currency, request.DestinationAccount);
@@ -31,7 +30,7 @@ public class PaymentsController : ControllerBase
         var command = new CreatePaymentCommand(request.Amount, request.Currency, request.DestinationAccount);
         var result = await _mediator.Send(command, cancellationToken);
 
-        var response = new CreatePaymentResponseV1
+        var response = new CreatePaymentResponseV2
         {
             IsSuccess = result.IsSuccess,
             PaymentId = result.PaymentId,

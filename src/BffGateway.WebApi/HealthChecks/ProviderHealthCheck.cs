@@ -1,5 +1,6 @@
 using BffGateway.Application.Abstractions.Providers;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Polly.CircuitBreaker;
 
 namespace BffGateway.WebApi.HealthChecks;
 
@@ -37,6 +38,11 @@ public class ProviderHealthCheck : IHealthCheck
         {
             _logger.LogWarning("Provider health check timed out");
             return HealthCheckResult.Degraded("Provider health check timed out");
+        }
+        catch (BrokenCircuitException)
+        {
+            _logger.LogWarning("Provider circuit breaker is open");
+            return HealthCheckResult.Degraded("Provider circuit breaker is open");
         }
         catch (Exception ex)
         {

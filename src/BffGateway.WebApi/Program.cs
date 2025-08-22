@@ -7,6 +7,9 @@ using Serilog;
 using System.Reflection;
 using BffGateway.WebApi.Middleware;
 using BffGateway.WebApi.Extensions;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +17,6 @@ var builder = WebApplication.CreateBuilder(args);
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
-    .WriteTo.Console()
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -50,12 +52,35 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "BFF Gateway API", Version = "v1" });
     c.SwaggerDoc("v2", new() { Title = "BFF Gateway API", Version = "v2" });
+    // Hide obsolete (deprecated) actions from Swagger
+    c.IgnoreObsoleteActions();
     c.DocInclusionPredicate((docName, apiDesc) =>
     {
         var groupName = apiDesc.GroupName ?? apiDesc.ActionDescriptor.DisplayName;
         return string.Equals(docName, groupName, StringComparison.OrdinalIgnoreCase);
     });
 });
+
+// ProblemDetails
+builder.Services.AddProblemDetails();
+
+// OpenTelemetry (conditionally enabled)
+var enableOtel = builder.Configuration.GetValue<bool>("Observability:EnableOpenTelemetry");
+if (enableOtel)
+{
+    builder.Services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource.AddService("BffGateway"))
+        .WithTracing(tracing => tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddConsoleExporter())
+        .WithMetrics(metrics => metrics
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddRuntimeInstrumentation()
+            .AddProcessInstrumentation()
+            .AddConsoleExporter());
+}
 
 var app = builder.Build();
 
@@ -65,17 +90,32 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "BFF Gateway API V1");
+        // Put v2 first to make it default/primary
         c.SwaggerEndpoint("/swagger/v2/swagger.json", "BFF Gateway API V2");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "BFF Gateway API V1 (deprecated)");
+        c.DocumentTitle = "BFF Gateway API";
     });
 }
 
-app.UseSerilogRequestLogging();
+app.UseExceptionHandler();
+
+app.UseSerilogRequestLogging(opts =>
+{
+    opts.EnrichDiagnosticContext = (ctx, http) =>
+    {
+        ctx.Set("CorrelationId", http.Request.Headers["X-Correlation-ID"].ToString());
+        ctx.Set("RequestHost", http.Request.Host.Value);
+        ctx.Set("RequestPath", http.Request.Path);
+    };
+});
 
 app.UseRouting();
 
 // Correlation ID middleware
 app.UseMiddleware<CorrelationIdMiddleware>();
+
+// Deprecation headers for v1 endpoints
+app.UseMiddleware<DeprecationHeadersMiddleware>();
 
 // Health check endpoints
 app.MapBffHealthChecks();

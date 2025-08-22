@@ -4,6 +4,7 @@ using BffGateway.Infrastructure.Providers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Extensions.Http;
 using Polly.Timeout;
@@ -41,19 +42,21 @@ public static class DependencyInjection
         .AddPolicyHandler((serviceProvider, request) =>
         {
             var options = serviceProvider.GetRequiredService<IOptions<ProviderOptions>>().Value;
-            return CreateRetryPolicy(options.Retry);
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("PollyHttpPolicies");
+            return CreateRetryPolicy(options.Retry, logger);
         })
         .AddPolicyHandler((serviceProvider, request) =>
         {
             var options = serviceProvider.GetRequiredService<IOptions<ProviderOptions>>().Value;
-            return CreateCircuitBreakerPolicy(options.CircuitBreaker);
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("PollyHttpPolicies");
+            return CreateCircuitBreakerPolicy(options.CircuitBreaker, logger);
         })
         .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(30)));
 
         return services;
     }
 
-    private static IAsyncPolicy<HttpResponseMessage> CreateRetryPolicy(RetryOptions options)
+    private static IAsyncPolicy<HttpResponseMessage> CreateRetryPolicy(RetryOptions options, ILogger logger)
     {
         var jitterer = new Random();
 
@@ -70,29 +73,35 @@ public static class DependencyInjection
                 },
                 onRetry: (outcome, timespan, retryCount, context) =>
                 {
-                    // Log retry attempts - in production would use proper logger from DI
-                    System.Console.WriteLine($"Retry {retryCount} for {context.OperationKey} in {timespan.TotalMilliseconds}ms due to: {outcome.Exception?.Message ?? outcome.Result?.StatusCode.ToString()}");
+                    var reason = outcome.Exception?.GetType().Name ?? outcome.Result?.StatusCode.ToString();
+                    logger.LogWarning(
+                        "Retrying outbound call attempt {RetryAttempt} after {DelayMs}ms due to {Reason} (op={OperationKey})",
+                        retryCount,
+                        timespan.TotalMilliseconds,
+                        reason,
+                        context.OperationKey);
                 });
     }
 
-    private static IAsyncPolicy<HttpResponseMessage> CreateCircuitBreakerPolicy(CircuitBreakerOptions options)
+    private static IAsyncPolicy<HttpResponseMessage> CreateCircuitBreakerPolicy(CircuitBreakerOptions options, ILogger logger)
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()
             .CircuitBreakerAsync(
                 handledEventsAllowedBeforeBreaking: options.FailureThreshold,
                 durationOfBreak: TimeSpan.FromSeconds(options.DurationOfBreakSeconds),
-                onBreak: (exception, duration) =>
+                onBreak: (outcome, duration) =>
                 {
-                    // Log circuit breaker opening
+                    var reason = outcome.Exception?.GetType().Name ?? outcome.Result?.StatusCode.ToString();
+                    logger.LogWarning("Circuit breaker OPEN for outbound provider calls for {DurationSeconds}s due to {Reason}", duration.TotalSeconds, reason);
                 },
                 onReset: () =>
                 {
-                    // Log circuit breaker closing
+                    logger.LogInformation("Circuit breaker RESET for outbound provider calls");
                 },
                 onHalfOpen: () =>
                 {
-                    // Log circuit breaker half-open
+                    logger.LogInformation("Circuit breaker HALF-OPEN for outbound provider calls");
                 });
     }
 }

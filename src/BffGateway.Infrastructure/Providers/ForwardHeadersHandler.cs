@@ -36,6 +36,8 @@ public class ForwardHeadersHandler : DelegatingHandler
                 httpContext.Request.Headers[CorrelationHeaderName] = correlationId;
             }
 
+            // Ensure correlation id is propagated outbound and align Activity if present
+            request.Headers.Remove(CorrelationHeaderName);
             request.Headers.TryAddWithoutValidation(CorrelationHeaderName, correlationId);
         }
 
