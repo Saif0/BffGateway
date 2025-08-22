@@ -6,16 +6,23 @@ import { Rate, Trend } from "k6/metrics";
 const errorRate = new Rate("error_rate");
 const responseTime = new Trend("response_time");
 
+// Env-driven config
+const BFF_BASE_URL = __ENV.BFF_BASE_URL || "http://localhost:5000";
+const BFF_RPS = Number(__ENV.BFF_RPS || 1000);
+const BFF_DURATION = __ENV.BFF_DURATION || "1m";
+const BFF_PREALLOC_VUS = Number(__ENV.BFF_PREALLOC_VUS || 200);
+const BFF_MAX_VUS = Number(__ENV.BFF_MAX_VUS || 2000);
+
 // Test configuration
 export const options = {
   scenarios: {
     sustained_load: {
       executor: "constant-arrival-rate",
-      rate: 1000, // 1000 iterations per second
+      rate: BFF_RPS,
       timeUnit: "1s",
-      duration: "1m",
-      preAllocatedVUs: 200,
-      maxVUs: 2000,
+      duration: BFF_DURATION,
+      preAllocatedVUs: BFF_PREALLOC_VUS,
+      maxVUs: BFF_MAX_VUS,
     },
   },
   thresholds: {
@@ -24,8 +31,6 @@ export const options = {
     http_req_failed: ["rate<0.01"],
   },
 };
-
-const BASE_URL = "http://localhost:5000";
 
 // Test data
 const users = [
@@ -42,7 +47,7 @@ const paymentRequests = [
 
 export function setup() {
   // Health check before starting the test
-  const healthResponse = http.get(`${BASE_URL}/health/ready`);
+  const healthResponse = http.get(`${BFF_BASE_URL}/health/ready`);
   check(healthResponse, {
     "Health check passed": (r) => r.status === 200,
   });
@@ -77,7 +82,11 @@ function testLoginV1(user) {
     },
   };
 
-  const response = http.post(`${BASE_URL}/v1/auth/login`, loginPayload, params);
+  const response = http.post(
+    `${BFF_BASE_URL}/v1/auth/login`,
+    loginPayload,
+    params
+  );
 
   const success = check(response, {
     "Login v1 status is 200": (r) => r.status === 200,
@@ -102,7 +111,11 @@ function testLoginV2(user) {
     },
   };
 
-  const response = http.post(`${BASE_URL}/v2/auth/login`, loginPayload, params);
+  const response = http.post(
+    `${BFF_BASE_URL}/v2/auth/login`,
+    loginPayload,
+    params
+  );
 
   let body;
   try {
@@ -142,7 +155,11 @@ function testPayment(paymentRequest) {
     },
   };
 
-  const response = http.post(`${BASE_URL}/v1/payments`, paymentPayload, params);
+  const response = http.post(
+    `${BFF_BASE_URL}/v1/payments`,
+    paymentPayload,
+    params
+  );
 
   let body;
   try {
@@ -169,7 +186,7 @@ function testPayment(paymentRequest) {
 
 export function teardown(data) {
   // Final health check
-  const healthResponse = http.get(`${BASE_URL}/health/ready`);
+  const healthResponse = http.get(`${BFF_BASE_URL}/health/ready`);
   check(healthResponse, {
     "Final health check passed": (r) => r.status === 200,
   });

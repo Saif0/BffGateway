@@ -3,7 +3,7 @@
 SHELL := /bin/bash
 ROOT := $(PWD)
 
-.PHONY: help build clean run-all run-gateway run-provider stop scripts tests load bench provider-load provider-load-quick provider-load-heavy
+.PHONY: help build clean run-all run-gateway run-provider stop scripts tests load bench provider-load provider-load-quick provider-load-heavy bff-load bff-load-quick bff-load-heavy
 
 help:
 	@echo "Available commands:"
@@ -19,6 +19,9 @@ help:
 	@echo "  make provider-load - Run provider k6 test (env tunables below)"
 	@echo "  make provider-load-quick - Quick 1m provider test"
 	@echo "  make provider-load-heavy - Heavier 10m provider test"
+	@echo "  make bff-load         - Run BFF k6 test (env tunables below)"
+	@echo "  make bff-load-quick   - Quick 1m BFF test"
+	@echo "  make bff-load-heavy   - Heavier 10m BFF test"
 	@echo "  make bench         - Run benchmarks project"
 
 # Provider load test defaults (override like: make provider-load AUTH_RPS=300 DURATION=10m)
@@ -69,6 +72,29 @@ tests: scripts
 load:
 	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
 	k6 run performance/load-test.js
+
+# BFF load test defaults (override like: make bff-load BFF_RPS=1500 BFF_DURATION=10m)
+BFF_BASE_URL ?= http://localhost:5000
+BFF_RPS ?= 1000
+BFF_DURATION ?= 1m
+BFF_PREALLOC_VUS ?= 200
+BFF_MAX_VUS ?= 2000
+
+bff-load:
+	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
+	@echo "Running BFF load: $(BFF_RPS)/s for $(BFF_DURATION) against $(BFF_BASE_URL)"
+	BFF_BASE_URL=$(BFF_BASE_URL) \
+	BFF_RPS=$(BFF_RPS) \
+	BFF_DURATION=$(BFF_DURATION) \
+	BFF_PREALLOC_VUS=$(BFF_PREALLOC_VUS) \
+	BFF_MAX_VUS=$(BFF_MAX_VUS) \
+	k6 run performance/load-test.js
+
+bff-load-quick:
+	$(MAKE) bff-load BFF_RPS=50 BFF_DURATION=1m BFF_PREALLOC_VUS=20 BFF_MAX_VUS=200
+
+bff-load-heavy:
+	$(MAKE) bff-load BFF_RPS=1000 BFF_DURATION=10m BFF_PREALLOC_VUS=200 BFF_MAX_VUS=2000
 
 provider-load:
 	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
