@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using MockProvider.DTOs;
 
 namespace MockProvider.Controllers;
 
@@ -7,19 +9,23 @@ namespace MockProvider.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly ILogger<AuthController> _logger;
+    private readonly LatencyOptions _latency;
 
-    public AuthController(ILogger<AuthController> logger)
+    public AuthController(ILogger<AuthController> logger, IOptionsSnapshot<LatencyOptions> latencyOptions)
     {
         _logger = logger;
+        _latency = latencyOptions.Value;
     }
 
     [HttpPost("authenticate")]
-    public async Task<IActionResult> Authenticate([FromBody] AuthenticateRequest request)
+    public async Task<IActionResult> Authenticate([FromBody] AuthenticateRequestDTO request)
     {
         _logger.LogInformation("Authentication attempt for user: {User}", request.User);
 
-        // Simulate processing delay
-        await Task.Delay(Random.Shared.Next(50, 120));
+        // Simulate processing delay (configurable)
+        var min = Math.Max(0, _latency.AuthMinMs);
+        var max = Math.Max(min + 1, _latency.AuthMaxMs + 1); // upper bound exclusive
+        await Task.Delay(Random.Shared.Next(min, max));
 
         // Simulate some authentication logic
         if (string.IsNullOrEmpty(request.User) || string.IsNullOrEmpty(request.Pwd))
@@ -42,12 +48,7 @@ public class AuthController : ControllerBase
         var token = GenerateMockJwt(request.User);
         var expiresAt = DateTime.UtcNow.AddHours(1);
 
-        var response = new AuthenticateResponse
-        {
-            Success = true,
-            Token = token,
-            ExpiresAt = expiresAt
-        };
+        var response = new AuthenticateResponseDTO(true, token, expiresAt);
 
         return Ok(response);
     }
@@ -60,17 +61,4 @@ public class AuthController : ControllerBase
 
         return $"{header}.{payload}.{signature}";
     }
-}
-
-public class AuthenticateRequest
-{
-    public string User { get; set; } = string.Empty;
-    public string Pwd { get; set; } = string.Empty;
-}
-
-public class AuthenticateResponse
-{
-    public bool Success { get; set; }
-    public string Token { get; set; } = string.Empty;
-    public DateTime ExpiresAt { get; set; }
 }

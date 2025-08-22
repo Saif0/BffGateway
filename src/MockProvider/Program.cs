@@ -4,6 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.Configure<MockProvider.LatencyOptions>(builder.Configuration.GetSection("Latency"));
 
 var app = builder.Build();
 

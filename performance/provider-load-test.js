@@ -39,8 +39,8 @@ export const options = {
   },
   thresholds: {
     http_req_failed: ["rate<0.01"],
-    auth_duration: ["p(95)<200"],
-    pay_duration: ["p(95)<200"],
+    auth_duration: ["p(95)<80"],
+    pay_duration: ["p(95)<80"],
     auth_error_rate: ["rate<0.01"],
     pay_error_rate: ["rate<0.01"],
   },
