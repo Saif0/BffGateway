@@ -1,4 +1,4 @@
-namespace BffGateway.Application.DTOs.Payment;
+namespace BffGateway.Application.Common.DTOs.Payment;
 
 public record ProviderPaymentRequest(decimal Total, string Curr, string Dest);
 

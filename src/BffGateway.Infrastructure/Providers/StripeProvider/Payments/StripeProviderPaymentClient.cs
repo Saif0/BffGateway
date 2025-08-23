@@ -1,4 +1,4 @@
-using BffGateway.Application.DTOs.Payment;
+using BffGateway.Application.Common.DTOs.Payment;
 using BffGateway.Infrastructure.Providers.StripeProvider.DTOs;
 using Microsoft.Extensions.Logging;
 using Polly.CircuitBreaker;

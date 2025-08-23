@@ -1,5 +1,5 @@
-using BffGateway.Application.DTOs.Auth;
-using BffGateway.Application.DTOs.Payment;
+using BffGateway.Application.Common.DTOs.Auth;
+using BffGateway.Application.Common.DTOs.Payment;
 
 namespace BffGateway.Application.Abstractions.Providers;
 
