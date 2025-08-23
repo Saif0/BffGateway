@@ -3,7 +3,7 @@
 SHELL := /bin/bash
 ROOT := $(PWD)
 
-.PHONY: help build clean run-all run-gateway run-provider stop scripts tests load bench provider-load provider-load-quick provider-load-heavy bff-load bff-load-quick bff-load-heavy
+.PHONY: help build clean run-all run-gateway run-provider stop scripts tests load bench provider-load provider-load-quick provider-load-heavy bff-load bff-load-quick bff-load-heavy circuit-breaker circuit-breaker-validate circuit-breaker-scenarios circuit-breaker-quick circuit-breaker-all circuit-breaker-full
 
 help:
 	@echo "Available commands:"
@@ -22,6 +22,16 @@ help:
 	@echo "  make bff-load         - Run BFF k6 test (env tunables below)"
 	@echo "  make bff-load-quick   - Quick 1m BFF test"
 	@echo "  make bff-load-heavy   - Heavier 10m BFF test"
+	@echo ""
+	@echo "Circuit Breaker Testing:"
+	@echo "  make circuit-breaker-validate  - Validate circuit breaker setup"
+	@echo "  make circuit-breaker-quick     - Quick circuit breaker test"
+	@echo "  make circuit-breaker           - Complete 3-phase circuit breaker test"
+	@echo "  make circuit-breaker-scenarios - Test multiple scenarios"
+	@echo "  make circuit-breaker-all       - Run all circuit breaker tests"
+	@echo "  make circuit-breaker-full      - Full test with service checks"
+	@echo ""
+	@echo "Other:"
 	@echo "  make bench         - Run benchmarks project"
 
 # Provider load test defaults (override like: make provider-load AUTH_RPS=300 DURATION=10m)
@@ -116,5 +126,43 @@ provider-load-heavy:
 bench:
 	@echo "Running benchmarks..."
 	@cd tests/BffGateway.Benchmarks && dotnet run -c Release
+
+# Circuit Breaker Testing Commands
+circuit-breaker-validate:
+	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
+	@echo "🔍 Validating circuit breaker setup..."
+	k6 run performance/validate-circuit-breaker-setup.js
+
+circuit-breaker:
+	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
+	@echo "🔥 Running complete circuit breaker test (3 phases)..."
+	@echo "📊 Monitor BFF Gateway logs for circuit breaker events:"
+	@echo "   - 'Circuit breaker OPEN'"
+	@echo "   - 'Circuit breaker HALF-OPEN'"
+	@echo "   - 'Circuit breaker RESET'"
+	k6 run performance/circuit-breaker-test.js
+
+circuit-breaker-scenarios:
+	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
+	@echo "🧪 Testing multiple circuit breaker scenarios..."
+	k6 run performance/circuit-breaker-scenarios.js
+
+circuit-breaker-quick:
+	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
+	@echo "⚡ Running quick circuit breaker test..."
+	k6 run performance/quick-circuit-breaker-test.js
+
+circuit-breaker-all: circuit-breaker-validate circuit-breaker circuit-breaker-scenarios
+	@echo "✅ All circuit breaker tests completed!"
+
+circuit-breaker-full:
+	@echo "🚀 Starting full circuit breaker test with service management..."
+	@echo "📋 This will:"
+	@echo "   1. Check if services are running"
+	@echo "   2. Validate setup"
+	@echo "   3. Run complete circuit breaker test"
+	@echo "   4. Show results and analysis"
+	@echo ""
+	@bash scripts/test-circuit-breaker.sh
 
 
