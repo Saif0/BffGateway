@@ -7,6 +7,7 @@ using Serilog;
 using System.Reflection;
 using BffGateway.WebApi.Middleware;
 using BffGateway.WebApi.Extensions;
+using BffGateway.WebApi.Handlers;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
@@ -71,8 +72,9 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// ProblemDetails
+// ProblemDetails and Global Exception Handler
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // OpenTelemetry (conditionally enabled)
 var enableOtel = builder.Configuration.GetValue<bool>("Observability:EnableOpenTelemetry");

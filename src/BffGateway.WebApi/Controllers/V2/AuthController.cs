@@ -3,6 +3,7 @@ using BffGateway.Application.Common.Enums;
 using BffGateway.WebApi.Models.V2;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace BffGateway.WebApi.Controllers.V2;
 
@@ -55,7 +56,16 @@ public class AuthController : ControllerBase
         }
         else
         {
-            _logger.LogWarning("Login (v2) failed for username: {Username}", request.Username);
+            var status = result.UpstreamStatusCode;
+            _logger.LogWarning("Login (v2) failed for username: {Username} with upstream status: {Status}", request.Username, status);
+
+            if (status == (int)HttpStatusCode.TooManyRequests)
+                return StatusCode((int)HttpStatusCode.TooManyRequests, response);
+            if (status == (int)HttpStatusCode.RequestTimeout)
+                return StatusCode((int)HttpStatusCode.GatewayTimeout, response);
+            if (status >= 500)
+                return StatusCode((int)HttpStatusCode.BadGateway, response);
+
             return BadRequest(response);
         }
     }

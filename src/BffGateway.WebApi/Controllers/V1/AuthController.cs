@@ -1,8 +1,10 @@
 using BffGateway.Application.Commands.Auth.Login;
+using BffGateway.Application.Common.Enums;
 using BffGateway.WebApi.Models.V1;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Net;
 
 namespace BffGateway.WebApi.Controllers.V1;
 
@@ -23,11 +25,11 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<LoginResponseV1>> Login([FromBody] LoginRequestV1 request, CancellationToken cancellationToken)
+    public async Task<ActionResult<LoginResponseV1>> Login([FromBody] LoginRequestV1 request, [FromQuery] SimulationScenario scenario = SimulationScenario.None, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Login request received for username: {Username}", request.Username);
+        _logger.LogInformation("Login request received for username: {Username} with scenario: {Scenario}", request.Username, scenario);
 
-        var command = new LoginCommand(request.Username, request.Password);
+        var command = new LoginCommand(request.Username, request.Password, scenario);
         var result = await _mediator.Send(command, cancellationToken);
 
         var response = new LoginResponseV1
@@ -44,7 +46,16 @@ public class AuthController : ControllerBase
         }
         else
         {
-            _logger.LogWarning("Login failed for username: {Username}", request.Username);
+            var status = result.UpstreamStatusCode;
+            _logger.LogWarning("Login failed for username: {Username} with upstream status: {Status}", request.Username, status);
+
+            if (status == (int)HttpStatusCode.TooManyRequests)
+                return StatusCode((int)HttpStatusCode.TooManyRequests, response);
+            if (status == (int)HttpStatusCode.RequestTimeout)
+                return StatusCode((int)HttpStatusCode.GatewayTimeout, response);
+            if (status >= 500)
+                return StatusCode((int)HttpStatusCode.BadGateway, response);
+
             return BadRequest(response);
         }
     }

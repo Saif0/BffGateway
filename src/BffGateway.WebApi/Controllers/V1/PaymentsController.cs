@@ -1,8 +1,10 @@
 using BffGateway.Application.Commands.Payments.CreatePayment;
+using BffGateway.Application.Common.Enums;
 using BffGateway.WebApi.Models.V1;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Net;
 
 namespace BffGateway.WebApi.Controllers.V1;
 
@@ -23,12 +25,12 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<CreatePaymentResponseV1>> CreatePayment([FromBody] CreatePaymentRequestV1 request, CancellationToken cancellationToken)
+    public async Task<ActionResult<CreatePaymentResponseV1>> CreatePayment([FromBody] CreatePaymentRequestV1 request, [FromQuery] SimulationScenario scenario = SimulationScenario.None, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Payment request received for amount: {Amount} {Currency} to {DestinationAccount}",
-            request.Amount, request.Currency, request.DestinationAccount);
+        _logger.LogInformation("Payment request received for amount: {Amount} {Currency} to {DestinationAccount} with scenario: {Scenario}",
+            request.Amount, request.Currency, request.DestinationAccount, scenario);
 
-        var command = new CreatePaymentCommand(request.Amount, request.Currency, request.DestinationAccount);
+        var command = new CreatePaymentCommand(request.Amount, request.Currency, request.DestinationAccount, scenario);
         var result = await _mediator.Send(command, cancellationToken);
 
         var response = new CreatePaymentResponseV1
@@ -46,7 +48,16 @@ public class PaymentsController : ControllerBase
         }
         else
         {
-            _logger.LogWarning("Payment failed for amount: {Amount} {Currency}", request.Amount, request.Currency);
+            var status = result.UpstreamStatusCode;
+            _logger.LogWarning("Payment failed for amount: {Amount} {Currency} with upstream status: {Status}", request.Amount, request.Currency, status);
+
+            if (status == (int)HttpStatusCode.TooManyRequests)
+                return StatusCode((int)HttpStatusCode.TooManyRequests, response);
+            if (status == (int)HttpStatusCode.RequestTimeout)
+                return StatusCode((int)HttpStatusCode.GatewayTimeout, response);
+            if (status >= 500)
+                return StatusCode((int)HttpStatusCode.BadGateway, response);
+
             return BadRequest(response);
         }
     }

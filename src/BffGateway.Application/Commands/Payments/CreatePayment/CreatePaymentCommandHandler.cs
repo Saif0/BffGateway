@@ -30,7 +30,8 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 providerResponse.Success,
                 providerResponse.Success ? providerResponse.TransactionId : null,
                 providerResponse.Success ? providerResponse.ProviderRef : null,
-                providerResponse.Success ? providerResponse.ProcessedAt : null
+                providerResponse.Success ? providerResponse.ProcessedAt : null,
+                providerResponse.StatusCode
             );
 
             _logger.LogInformation("Payment request processed successfully for amount: {Amount} {Currency}, Success: {Success}",
@@ -42,7 +43,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         {
             _logger.LogError(ex, "Error processing payment request for amount: {Amount} {Currency}",
                 request.Amount, request.Currency);
-            return new CreatePaymentResponseDTO(false, null, null, null);
+            return new CreatePaymentResponseDTO(false, null, null, null, 500);
         }
     }
 }

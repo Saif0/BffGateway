@@ -4,6 +4,7 @@ public sealed record CreatePaymentResponseDTO(
     bool IsSuccess,
     string? PaymentId,
     string? ProviderReference,
-    DateTime? ProcessedAt);
+    DateTime? ProcessedAt,
+    int? UpstreamStatusCode = null);
 
 

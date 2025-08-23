@@ -47,8 +47,8 @@ public class MockProviderAuthClient
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("MockProvider authentication failed");
-                return new ProviderAuthResponse(false, string.Empty, DateTime.MinValue);
+                _logger.LogWarning("MockProvider authentication failed with status code: {StatusCode}", response.StatusCode);
+                return new ProviderAuthResponse(false, string.Empty, DateTime.MinValue, (int)response.StatusCode);
             }
 
             var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -57,7 +57,8 @@ public class MockProviderAuthClient
             return new ProviderAuthResponse(
                 providerResponse?.Success ?? false,
                 providerResponse?.Token ?? string.Empty,
-                providerResponse?.ExpiresAt ?? DateTime.MinValue
+                providerResponse?.ExpiresAt ?? DateTime.MinValue,
+                (int)response.StatusCode
             );
         }
         catch (BrokenCircuitException bce)
@@ -68,7 +69,7 @@ public class MockProviderAuthClient
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during MockProvider authentication");
-            return new ProviderAuthResponse(false, string.Empty, DateTime.MinValue);
+            return new ProviderAuthResponse(false, string.Empty, DateTime.MinValue, 500);
         }
     }
 

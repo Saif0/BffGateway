@@ -48,8 +48,8 @@ public class MockProviderPaymentClient
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("MockProvider payment failed for amount: {Total} {Curr}", request.Total, request.Curr);
-                return new ProviderPaymentResponse(false, string.Empty, string.Empty, DateTime.MinValue);
+                _logger.LogWarning("MockProvider payment failed for amount: {Total} {Curr} with status code: {StatusCode}", request.Total, request.Curr, response.StatusCode);
+                return new ProviderPaymentResponse(false, string.Empty, string.Empty, DateTime.MinValue, (int)response.StatusCode);
             }
 
             var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -62,7 +62,8 @@ public class MockProviderPaymentClient
                 providerResponse?.Success ?? false,
                 providerResponse?.TransactionId ?? string.Empty,
                 providerResponse?.ProviderRef ?? string.Empty,
-                providerResponse?.ProcessedAt ?? DateTime.MinValue
+                providerResponse?.ProcessedAt ?? DateTime.MinValue,
+                (int)response.StatusCode
             );
         }
         catch (BrokenCircuitException bce)
@@ -74,7 +75,7 @@ public class MockProviderPaymentClient
         {
             _logger.LogError(ex, "Error during MockProvider payment for amount: {Total} {Curr}",
                 request.Total, request.Curr);
-            return new ProviderPaymentResponse(false, string.Empty, string.Empty, DateTime.MinValue);
+            return new ProviderPaymentResponse(false, string.Empty, string.Empty, DateTime.MinValue, 500);
         }
     }
 

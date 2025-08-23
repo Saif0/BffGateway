@@ -28,7 +28,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDT
             var response = new LoginResponseDTO(
                 providerResponse.Success,
                 providerResponse.Success ? providerResponse.Token : null,
-                providerResponse.Success ? providerResponse.ExpiresAt : null
+                providerResponse.Success ? providerResponse.ExpiresAt : null,
+                providerResponse.StatusCode
             );
 
             _logger.LogInformation("Login request processed successfully for username: {Username}, Success: {Success}",
@@ -39,7 +40,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDT
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing login request for username: {Username}", request.Username);
-            return new LoginResponseDTO(false, null, null);
+            return new LoginResponseDTO(false, null, null, 500);
         }
     }
 }

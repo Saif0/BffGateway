@@ -36,7 +36,7 @@ public static class DependencyInjection
             {
                 ConnectTimeout = TimeSpan.FromSeconds(options.ConnectTimeoutSeconds),
                 AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate,
-                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+                PooledConnectionLifetime = TimeSpan.FromSeconds(5),
             };
         })
         .AddHttpMessageHandler<ForwardHeadersHandler>()
