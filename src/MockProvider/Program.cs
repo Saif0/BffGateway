@@ -1,7 +1,10 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Linq;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using MockProvider.DTOs.Enums;
+using MockProvider.DTOs;
 
 static string Truncate(string value, int maxLength)
 {
@@ -12,9 +15,27 @@ static string Truncate(string value, int maxLength)
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    // Ensure enums are represented as strings in the OpenAPI schema
+    c.MapType<MockProvider.DTOs.Enums.SimulationScenario>(() => new Microsoft.OpenApi.Models.OpenApiSchema
+    {
+        Type = "string",
+        Enum = new List<Microsoft.OpenApi.Any.IOpenApiAny>
+        {
+            new Microsoft.OpenApi.Any.OpenApiString(nameof(SimulationScenario.None)),
+            new Microsoft.OpenApi.Any.OpenApiString(nameof(SimulationScenario.Fail)),
+            new Microsoft.OpenApi.Any.OpenApiString(nameof(SimulationScenario.Timeout)),
+            new Microsoft.OpenApi.Any.OpenApiString(nameof(SimulationScenario.LimitExceeded))
+        }
+    });
+});
 builder.Services.Configure<MockProvider.LatencyOptions>(builder.Configuration.GetSection("Latency"));
 
 var app = builder.Build();

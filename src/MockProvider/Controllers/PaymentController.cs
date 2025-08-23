@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using MockProvider.DTOs;
+using MockProvider.DTOs.Enums;
 
 namespace MockProvider.Controllers;
 
@@ -18,10 +19,10 @@ public class PaymentController : ControllerBase
     }
 
     [HttpPost("pay")]
-    public async Task<IActionResult> Pay([FromBody] PayRequestDTO request)
+    public async Task<IActionResult> Pay([FromBody] PayRequestDTO request, [FromQuery] SimulationScenario scenario = SimulationScenario.None)
     {
-        _logger.LogInformation("Payment request for amount: {Total} {Curr} to {Dest}",
-            request.Total, request.Curr, request.Dest);
+        _logger.LogInformation("Payment request for amount: {Total} {Curr} to {Dest} with scenario: {Scenario}",
+            request.Total, request.Curr, request.Dest, scenario);
 
         // Simulate processing delay (configurable)
         var min = Math.Max(0, _latency.PayMinMs);
@@ -34,18 +35,16 @@ public class PaymentController : ControllerBase
             return BadRequest(new { error = "Invalid payment request" });
         }
 
-        // Simulate failure for specific test cases
-        if (request.Dest == "fail")
+        // Simulate failure/timeout/limit based on scenario
+        if (scenario == SimulationScenario.Fail)
         {
             return StatusCode(500, new { error = "Payment processing failed" });
         }
-        // Simulate Request Exceeding Limit
-        if (request.Dest == "limit")
+        if (scenario == SimulationScenario.LimitExceeded)
         {
             return StatusCode(429, new { error = "Request Exceeding Limit" });
         }
-
-        if (request.Dest == "timeout")
+        if (scenario == SimulationScenario.Timeout)
         {
             await Task.Delay(_latency.PayTimeoutMs); // Simulate timeout
         }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using MockProvider.DTOs;
+using MockProvider.DTOs.Enums;
 
 namespace MockProvider.Controllers;
 
@@ -18,9 +19,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("authenticate")]
-    public async Task<IActionResult> Authenticate([FromBody] AuthenticateRequestDTO request)
+    public async Task<IActionResult> Authenticate([FromBody] AuthenticateRequestDTO request, [FromQuery] SimulationScenario scenario = SimulationScenario.None)
     {
-        _logger.LogInformation("Authentication attempt for user: {User}", request.User);
+        _logger.LogInformation("Authentication attempt for user: {User} with scenario: {Scenario}", request.User, scenario);
 
         // Simulate processing delay (configurable)
         var min = Math.Max(0, _latency.AuthMinMs);
@@ -33,18 +34,16 @@ public class AuthController : ControllerBase
             return BadRequest(new { error = "Invalid credentials" });
         }
 
-        // Simulate failure for specific test cases
-        if (request.User == "fail")
+        // Simulate failure/timeout/limit based on scenario
+        if (scenario == SimulationScenario.Fail)
         {
             return StatusCode(500, new { error = "Internal server error" });
         }
-
-        if (request.User == "timeout")
+        if (scenario == SimulationScenario.Timeout)
         {
             await Task.Delay(_latency.AuthTimeoutMs); // Simulate timeout
         }
-        // Simulate Request Exceeding Limit
-        if (request.User == "limit")
+        if (scenario == SimulationScenario.LimitExceeded)
         {
             return StatusCode(429, new { error = "Request Exceeding Limit" });
         }
