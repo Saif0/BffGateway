@@ -71,6 +71,7 @@ public static class DependencyInjection
     private static IAsyncPolicy<HttpResponseMessage> CreateRetryPolicy(RetryOptions options, ILogger logger)
     {
         var jitterer = new Random();
+        // logger.LogInformation("Creating retry policy with {MaxRetries} retries, {BaseDelayMs}ms base delay, {MaxJitterMs}ms jitter", options.MaxRetries, options.BaseDelayMs, options.MaxJitterMs);
 
         return HttpPolicyExtensions
             .HandleTransientHttpError() // HttpRequestException and 5XX and 408 status codes

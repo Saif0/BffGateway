@@ -24,7 +24,7 @@ export const options = {
       timeUnit: "1s",
       duration: "35s", // Test during circuit breaker period
       startTime: "11s", // Start after trigger phase
-      preAllocatedVUs: 2,
+      preAllocatedVUs: 5,
       maxVUs: 5,
       exec: "testCircuitOpen",
     },
@@ -67,7 +67,7 @@ export function generateFailures() {
 
 export function testCircuitOpen() {
   const response = http.post(
-    `${bff.baseUrl}/v2/auth/login?scenario=None`,
+    `${bff.baseUrl}/v2/auth/login?scenario=Fail`,
     JSON.stringify({ username: "test", password: "test" }),
     { headers: { "Content-Type": "application/json" } }
   );
