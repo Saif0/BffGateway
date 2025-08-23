@@ -1,6 +1,7 @@
 using BffGateway.Application.Abstractions.Providers;
 using BffGateway.Infrastructure.Configuration;
 using BffGateway.Infrastructure.Providers;
+using BffGateway.Infrastructure.Providers.MockProvider;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -21,8 +22,8 @@ public static class DependencyInjection
         // Register delegating handler
         services.AddTransient<ForwardHeadersHandler>();
 
-        // Add HTTP client with Polly policies
-        services.AddHttpClient<IProviderClient, ProviderClient>((serviceProvider, client) =>
+        // Named HTTP client for MockProvider (default)
+        services.AddHttpClient("MockProvider", (serviceProvider, client) =>
         {
             var options = serviceProvider.GetRequiredService<IOptions<ProviderOptions>>().Value;
             client.BaseAddress = new Uri(options.BaseUrl);
@@ -52,6 +53,17 @@ public static class DependencyInjection
             return CreateCircuitBreakerPolicy(options.CircuitBreaker, logger);
         })
         .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(30)));
+
+        // Default IProviderClient directly uses MockProvider
+        services.AddTransient<IProviderClient>(sp =>
+        {
+            var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("MockProvider");
+            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+            return new MockProviderClient(httpClient, loggerFactory);
+        });
+
+        // Factory for resolving provider by name
+        services.AddSingleton<IProviderClientFactory, ProviderClientFactory>();
 
         return services;
     }
