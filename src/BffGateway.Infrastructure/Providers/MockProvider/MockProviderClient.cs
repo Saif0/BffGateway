@@ -1,5 +1,6 @@
 using BffGateway.Application.Abstractions.Providers;
-using BffGateway.Application.Common.DTOs;
+using BffGateway.Application.DTOs.Auth;
+using BffGateway.Application.DTOs.Payment;
 using BffGateway.Infrastructure.Providers.MockProvider.Auth;
 using BffGateway.Infrastructure.Providers.MockProvider.Health;
 using BffGateway.Infrastructure.Providers.MockProvider.Payments;

@@ -1,5 +1,5 @@
 using BffGateway.Application.Abstractions.Providers;
-using BffGateway.Application.Common.DTOs;
+using BffGateway.Application.DTOs.Auth;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

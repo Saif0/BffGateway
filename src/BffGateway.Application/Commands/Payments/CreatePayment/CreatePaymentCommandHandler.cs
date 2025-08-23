@@ -1,5 +1,5 @@
 using BffGateway.Application.Abstractions.Providers;
-using BffGateway.Application.Common.DTOs;
+using BffGateway.Application.DTOs.Payment;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

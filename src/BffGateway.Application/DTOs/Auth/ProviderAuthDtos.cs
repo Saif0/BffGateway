@@ -1,4 +1,4 @@
-namespace BffGateway.Application.Common.DTOs;
+namespace BffGateway.Application.DTOs.Auth;
 
 public record ProviderAuthRequest(string User, string Pwd);
 
