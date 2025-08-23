@@ -1,5 +1,4 @@
 using System.Text.Json;
-using BffGateway.WebApi.HealthChecks;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -9,27 +8,15 @@ public static class HealthCheckExtensions
 {
     public static IServiceCollection AddBffHealthChecks(this IServiceCollection services)
     {
-        services.AddHealthChecks()
-            .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live", "ready" })
-            .AddCheck<ProviderHealthCheck>("provider", tags: new[] { "ready" });
-
+        // Health checks are now handled by the HealthController
+        // Keeping this extension for potential future use or if we want to add back middleware endpoints
         return services;
     }
 
     public static IEndpointRouteBuilder MapBffHealthChecks(this IEndpointRouteBuilder app)
     {
-        app.MapHealthChecks("/health/live", new HealthCheckOptions
-        {
-            Predicate = r => r.Tags.Contains("live"),
-            ResponseWriter = WriteResponse
-        });
-
-        app.MapHealthChecks("/health/ready", new HealthCheckOptions
-        {
-            Predicate = r => r.Tags.Contains("ready"),
-            ResponseWriter = WriteResponse
-        });
-
+        // Health check endpoints are now handled by HealthController
+        // Keeping this method for backward compatibility but not mapping any endpoints
         return app;
     }
 

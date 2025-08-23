@@ -1,5 +1,4 @@
 using BffGateway.Infrastructure;
-using BffGateway.WebApi.HealthChecks;
 using BffGateway.WebApi.Swagger;
 using FluentValidation;
 using MediatR;
