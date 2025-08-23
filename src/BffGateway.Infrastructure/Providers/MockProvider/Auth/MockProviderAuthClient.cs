@@ -1,4 +1,5 @@
 using BffGateway.Application.Common.DTOs.Auth;
+using BffGateway.Application.Common.Enums;
 using BffGateway.Infrastructure.Providers.MockProvider.DTOs;
 using Microsoft.Extensions.Logging;
 using Polly.CircuitBreaker;
@@ -26,6 +27,7 @@ public class MockProviderAuthClient
 
     public async Task<ProviderAuthResponse> AuthenticateAsync(
     ProviderAuthRequest request,
+    SimulationScenario scenario = SimulationScenario.None,
     CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Calling MockProvider authentication");
@@ -36,7 +38,8 @@ public class MockProviderAuthClient
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var sw = Stopwatch.StartNew();
-            var response = await _httpClient.PostAsync("/api/authenticate", content, cancellationToken);
+            var url = $"/api/authenticate?scenario={scenario}";
+            var response = await _httpClient.PostAsync(url, content, cancellationToken);
             sw.Stop();
 
             _logger.LogInformation("MockProvider call {Path} ended with {StatusCode} in {ElapsedMs}ms",

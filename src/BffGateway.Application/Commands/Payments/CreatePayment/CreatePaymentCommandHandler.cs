@@ -24,7 +24,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         try
         {
             var providerRequest = new ProviderPaymentRequest(request.Amount, request.Currency, request.DestinationAccount);
-            var providerResponse = await _providerClient.ProcessPaymentAsync(providerRequest, cancellationToken);
+            var providerResponse = await _providerClient.ProcessPaymentAsync(providerRequest, request.Scenario, cancellationToken);
 
             var response = new CreatePaymentResponseDTO(
                 providerResponse.Success,

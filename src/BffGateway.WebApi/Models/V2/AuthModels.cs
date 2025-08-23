@@ -1,3 +1,4 @@
+using BffGateway.Application.Common.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace BffGateway.WebApi.Models.V2;

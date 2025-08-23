@@ -23,7 +23,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDT
         try
         {
             var providerRequest = new ProviderAuthRequest(request.Username, request.Password);
-            var providerResponse = await _providerClient.AuthenticateAsync(providerRequest, cancellationToken);
+            var providerResponse = await _providerClient.AuthenticateAsync(providerRequest, request.Scenario, cancellationToken);
 
             var response = new LoginResponseDTO(
                 providerResponse.Success,

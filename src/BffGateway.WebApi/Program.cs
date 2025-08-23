@@ -1,5 +1,6 @@
 using BffGateway.Infrastructure;
 using BffGateway.WebApi.HealthChecks;
+using BffGateway.WebApi.Swagger;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,7 @@ using BffGateway.WebApi.Extensions;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +24,12 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Configure enums to serialize as strings instead of numbers
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 // Add API versioning (simplified approach for .NET 8+)
 builder.Services.AddApiVersioning();
@@ -52,6 +59,10 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "BFF Gateway API", Version = "v1" });
     c.SwaggerDoc("v2", new() { Title = "BFF Gateway API", Version = "v2" });
+
+    // Configure enums to show as strings in Swagger
+    c.SchemaFilter<EnumSchemaFilter>();
+
     // Hide obsolete (deprecated) actions from Swagger
     // c.IgnoreObsoleteActions();
     c.DocInclusionPredicate((docName, apiDesc) =>

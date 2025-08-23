@@ -1,6 +1,7 @@
 using BffGateway.Application.Abstractions.Providers;
 using BffGateway.Application.Common.DTOs.Auth;
 using BffGateway.Application.Common.DTOs.Payment;
+using BffGateway.Application.Common.Enums;
 using BffGateway.Infrastructure.Providers.MockProvider.Auth;
 using BffGateway.Infrastructure.Providers.MockProvider.Health;
 using BffGateway.Infrastructure.Providers.MockProvider.Payments;
@@ -25,11 +26,11 @@ public class MockProviderClient : IProviderClient
         _healthClient = new MockProviderHealthClient(httpClient, loggerFactory.CreateLogger<MockProviderHealthClient>());
     }
 
-    public Task<ProviderAuthResponse> AuthenticateAsync(ProviderAuthRequest request, CancellationToken cancellationToken = default)
-        => _authClient.AuthenticateAsync(request, cancellationToken);
+    public Task<ProviderAuthResponse> AuthenticateAsync(ProviderAuthRequest request, SimulationScenario scenario = SimulationScenario.None, CancellationToken cancellationToken = default)
+        => _authClient.AuthenticateAsync(request, scenario, cancellationToken);
 
-    public Task<ProviderPaymentResponse> ProcessPaymentAsync(ProviderPaymentRequest request, CancellationToken cancellationToken = default)
-        => _paymentClient.ProcessPaymentAsync(request, cancellationToken);
+    public Task<ProviderPaymentResponse> ProcessPaymentAsync(ProviderPaymentRequest request, SimulationScenario scenario = SimulationScenario.None, CancellationToken cancellationToken = default)
+        => _paymentClient.ProcessPaymentAsync(request, scenario, cancellationToken);
 
     public Task<bool> HealthCheckAsync(CancellationToken cancellationToken = default)
         => _healthClient.HealthCheckAsync(cancellationToken);

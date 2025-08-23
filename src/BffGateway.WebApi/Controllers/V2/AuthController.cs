@@ -1,4 +1,5 @@
 using BffGateway.Application.Commands.Auth.Login;
+using BffGateway.Application.Common.Enums;
 using BffGateway.WebApi.Models.V2;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -20,12 +21,19 @@ public class AuthController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Authenticate a user and return a JWT token
+    /// </summary>
+    /// <param name="request">Login credentials</param>
+    /// <param name="scenario">Simulation scenario for testing different behaviors</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Authentication result with JWT token</returns>
     [HttpPost("login")]
-    public async Task<ActionResult<LoginResponseV2>> Login([FromBody] LoginRequestV2 request, CancellationToken cancellationToken)
+    public async Task<ActionResult<LoginResponseV2>> Login([FromBody] LoginRequestV2 request, [FromQuery] SimulationScenario scenario = SimulationScenario.None, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Login request (v2) received for username: {Username}", request.Username);
+        _logger.LogInformation("Login request (v2) received for username: {Username} with scenario: {Scenario}", request.Username, scenario);
 
-        var command = new LoginCommand(request.Username, request.Password);
+        var command = new LoginCommand(request.Username, request.Password, scenario);
         var result = await _mediator.Send(command, cancellationToken);
 
         var response = new LoginResponseV2

@@ -1,4 +1,5 @@
 using BffGateway.Application.Common.DTOs.Payment;
+using BffGateway.Application.Common.Enums;
 using BffGateway.Infrastructure.Providers.MockProvider.DTOs;
 using Microsoft.Extensions.Logging;
 using Polly.CircuitBreaker;
@@ -26,6 +27,7 @@ public class MockProviderPaymentClient
 
     public async Task<ProviderPaymentResponse> ProcessPaymentAsync(
     ProviderPaymentRequest request,
+    SimulationScenario scenario = SimulationScenario.None,
     CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Calling MockProvider payment for amount: {Total} {Curr} to {Dest}",
@@ -37,7 +39,8 @@ public class MockProviderPaymentClient
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var sw = Stopwatch.StartNew();
-            var response = await _httpClient.PostAsync("/api/pay", content, cancellationToken);
+            var url = $"/api/pay?scenario={scenario}";
+            var response = await _httpClient.PostAsync(url, content, cancellationToken);
             sw.Stop();
 
             _logger.LogInformation("MockProvider call {Path} ended with {StatusCode} in {ElapsedMs}ms",
