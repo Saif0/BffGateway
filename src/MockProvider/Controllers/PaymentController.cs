@@ -47,7 +47,7 @@ public class PaymentController : ControllerBase
 
         if (request.Dest == "timeout")
         {
-            await Task.Delay(5000); // Simulate timeout
+            await Task.Delay(_latency.PayTimeoutMs); // Simulate timeout
         }
 
         // Generate mock payment response

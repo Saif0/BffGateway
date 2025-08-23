@@ -6,6 +6,8 @@ public class LatencyOptions
     public int AuthMaxMs { get; set; }
     public int PayMinMs { get; set; }
     public int PayMaxMs { get; set; }
+    public int AuthTimeoutMs { get; set; }
+    public int PayTimeoutMs { get; set; }
 }
 
 

@@ -41,7 +41,12 @@ public class AuthController : ControllerBase
 
         if (request.User == "timeout")
         {
-            await Task.Delay(5000); // Simulate timeout
+            await Task.Delay(_latency.AuthTimeoutMs); // Simulate timeout
+        }
+        // Simulate Request Exceeding Limit
+        if (request.User == "limit")
+        {
+            return StatusCode(429, new { error = "Request Exceeding Limit" });
         }
 
         // Generate mock JWT token
