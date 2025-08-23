@@ -39,6 +39,11 @@ public class PaymentController : ControllerBase
         {
             return StatusCode(500, new { error = "Payment processing failed" });
         }
+        // Simulate Request Exceeding Limit
+        if (request.Dest == "limit")
+        {
+            return StatusCode(429, new { error = "Request Exceeding Limit" });
+        }
 
         if (request.Dest == "timeout")
         {

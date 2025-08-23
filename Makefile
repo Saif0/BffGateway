@@ -48,11 +48,11 @@ run-all:
 
 run-gateway:
 	@echo "Starting BFF Gateway on http://localhost:5000 ..."
-	@cd src/BffGateway.WebApi && dotnet run --urls "http://localhost:5000"
+	@cd src/BffGateway.WebApi && dotnet run -c Release --urls "http://localhost:5000"
 
 run-provider:
 	@echo "Starting Mock Provider on http://localhost:5001 ..."
-	@cd src/MockProvider && dotnet run --urls "http://localhost:5001"
+	@cd src/MockProvider && dotnet run -c Release --urls "http://localhost:5001"
 
 stop:
 	@if [ -f $(PIDS_FILE) ]; then \
@@ -108,10 +108,10 @@ provider-load:
 	k6 run performance/provider-load-test.js
 
 provider-load-quick:
-	$(MAKE) provider-load AUTH_RPS=10 PAY_RPS=10 DURATION=1m PREALLOC_VUS=20 MAX_VUS=2000
+	$(MAKE) provider-load AUTH_RPS=10 PAY_RPS=10 DURATION=1m PREALLOC_VUS=20 MAX_VUS=1000
 
 provider-load-heavy:
-	$(MAKE) provider-load AUTH_RPS=500 PAY_RPS=500 DURATION=10m PREALLOC_VUS=200 MAX_VUS=2000
+	$(MAKE) provider-load AUTH_RPS=500 PAY_RPS=500 DURATION=10m PREALLOC_VUS=200 MAX_VUS=1000
 
 bench:
 	@echo "Running benchmarks..."
