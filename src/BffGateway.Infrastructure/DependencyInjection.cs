@@ -22,6 +22,14 @@ public static class DependencyInjection
         // Register delegating handler
         services.AddTransient<ForwardHeadersHandler>();
 
+        // Register a SINGLETON circuit breaker policy so state persists across requests
+        services.AddSingleton<IAsyncPolicy<HttpResponseMessage>>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<ProviderOptions>>().Value;
+            var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("PollyHttpPolicies");
+            return CreateCircuitBreakerPolicy(options.CircuitBreaker, logger);
+        });
+
         // Named HTTP client for MockProvider (default)
         services.AddHttpClient("MockProvider", (serviceProvider, client) =>
         {
@@ -40,6 +48,9 @@ public static class DependencyInjection
             };
         })
         .AddHttpMessageHandler<ForwardHeadersHandler>()
+        // Order matters: circuit breaker OUTER, then retry, then timeout
+        .AddPolicyHandler((serviceProvider, request) =>
+            serviceProvider.GetRequiredService<IAsyncPolicy<HttpResponseMessage>>())
         .AddPolicyHandler((serviceProvider, request) =>
         {
             var options = serviceProvider.GetRequiredService<IOptions<ProviderOptions>>().Value;
@@ -49,10 +60,8 @@ public static class DependencyInjection
         .AddPolicyHandler((serviceProvider, request) =>
         {
             var options = serviceProvider.GetRequiredService<IOptions<ProviderOptions>>().Value;
-            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("PollyHttpPolicies");
-            return CreateCircuitBreakerPolicy(options.CircuitBreaker, logger);
-        })
-        .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(30)));
+            return Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(options.TimeoutSeconds));
+        });
 
         // Default IProviderClient directly uses MockProvider
         services.AddTransient<IProviderClient>(sp =>
@@ -98,6 +107,9 @@ public static class DependencyInjection
 
     private static IAsyncPolicy<HttpResponseMessage> CreateCircuitBreakerPolicy(CircuitBreakerOptions options, ILogger logger)
     {
+        // Circuite Breaker Options
+        logger.LogInformation("Creating circuit breaker policy with {FailureThreshold} failures, {DurationOfBreakSeconds}s duration of break", options.FailureThreshold, options.DurationOfBreakSeconds);
+
         return HttpPolicyExtensions
             .HandleTransientHttpError()
             .CircuitBreakerAsync(

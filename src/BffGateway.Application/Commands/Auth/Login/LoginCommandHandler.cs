@@ -32,8 +32,19 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDT
                 providerResponse.StatusCode
             );
 
-            _logger.LogInformation("Login request processed successfully for username: {Username}, Success: {Success}",
-                request.Username, response.IsSuccess);
+            if (response.IsSuccess)
+            {
+                _logger.LogInformation("Login request processed successfully for username: {Username}, Success: {Success}",
+                    request.Username, response.IsSuccess);
+            }
+            else
+            {
+                // Log the error
+                _logger.LogWarning("Login request failed for username: {Username}, StatusCode: {StatusCode}",
+                    request.Username, response.UpstreamStatusCode);
+                // return exception 
+                throw new Exception($"Login request failed for username: {request.Username}, StatusCode: {response.UpstreamStatusCode}");
+            }
 
             return response;
         }
