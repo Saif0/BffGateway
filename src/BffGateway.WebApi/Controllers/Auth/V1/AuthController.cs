@@ -9,7 +9,7 @@ using System.Net;
 namespace BffGateway.WebApi.Controllers.V1;
 
 [ApiController]
-[ApiVersion("1.0")]
+[ApiVersion("1.0", Deprecated = true)]
 [Route("v{version:apiVersion}/auth")]
 [ApiExplorerSettings(GroupName = "v1")]
 [Obsolete("v1 is deprecated; use v2")]

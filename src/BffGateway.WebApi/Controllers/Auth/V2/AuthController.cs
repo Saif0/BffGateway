@@ -30,6 +30,7 @@ public class AuthController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Authentication result with JWT token</returns>
     [HttpPost("login")]
+    [MapToApiVersion("2.0")]
     public async Task<ActionResult<LoginResponseV2>> Login([FromBody] LoginRequestV2 request, [FromQuery] SimulationScenario scenario = SimulationScenario.None, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Login request (v2) received for username: {Username} with scenario: {Scenario}", request.Username, scenario);
