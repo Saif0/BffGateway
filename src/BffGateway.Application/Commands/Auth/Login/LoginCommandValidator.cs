@@ -7,11 +7,6 @@ namespace BffGateway.Application.Commands.Auth.Login;
 
 public class LoginCommandValidator : LocalizedValidatorBase<LoginCommand>
 {
-    public LoginCommandValidator() : base()
-    {
-        ConfigureRules();
-    }
-
     public LoginCommandValidator(IMessageService messageService) : base(messageService)
     {
         ConfigureRules();
@@ -26,10 +21,12 @@ public class LoginCommandValidator : LocalizedValidatorBase<LoginCommand>
             .WithMessage(GetLocalizedMessage(MessageKeys.Validation.UsernameMaxLength));
 
         RuleFor(x => x.Password)
-            .NotEmpty()
-            .WithMessage(GetLocalizedMessage(MessageKeys.Validation.PasswordRequired))
-            .MinimumLength(1)
-            .WithMessage(GetLocalizedMessage(MessageKeys.Validation.PasswordRequired));
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty().WithMessage(GetLocalizedMessage(MessageKeys.Validation.PasswordRequired))
+            .MinimumLength(8).WithMessage(GetLocalizedMessage(MessageKeys.Validation.PasswordPolicy))
+            .Matches(@"[A-Z]").WithMessage(GetLocalizedMessage(MessageKeys.Validation.PasswordPolicy))
+            .Matches(@"[a-z]").WithMessage(GetLocalizedMessage(MessageKeys.Validation.PasswordPolicy))
+            .Matches(@"\d").WithMessage(GetLocalizedMessage(MessageKeys.Validation.PasswordPolicy));
     }
 }
 

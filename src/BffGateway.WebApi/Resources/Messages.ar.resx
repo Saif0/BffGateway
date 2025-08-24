@@ -124,6 +124,9 @@
   <data name="PasswordRequired">
     <value>كلمة المرور مطلوبة</value>
   </data>
+  <data name="PasswordPolicy">
+    <value>يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل وتشمل حروف كبيرة وصغيرة ورقم.</value>
+  </data>
   <data name="AmountGreaterThanZero">
     <value>يجب أن يكون المبلغ أكبر من الصفر</value>
   </data>

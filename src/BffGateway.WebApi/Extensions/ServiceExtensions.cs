@@ -4,6 +4,7 @@ using FluentValidation;
 using MediatR;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using BffGateway.Application.Common.Behaviors;
 
 namespace BffGateway.WebApi.Extensions;
 
@@ -28,8 +29,9 @@ public static class ServiceExtensions
         // Add Application layer
         var applicationAssembly = Assembly.Load("BffGateway.Application");
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(applicationAssembly));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
-        // Add FluentValidation with dependency injection support
+        // Add FluentValidation with dependency injection support - explicitly register with dependencies
         services.AddValidatorsFromAssembly(applicationAssembly, ServiceLifetime.Scoped, includeInternalTypes: false);
 
         // Add Infrastructure layer

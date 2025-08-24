@@ -5,6 +5,7 @@ using System.Net;
 using System.Text.Json;
 using BffGateway.Application.Abstractions.Services;
 using BffGateway.WebApi.Constants;
+using FluentValidation;
 
 namespace BffGateway.WebApi.Exceptions;
 
@@ -24,6 +25,50 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
+        // Handle FluentValidation exceptions explicitly as 400 with detailed errors
+        if (exception is ValidationException validationException)
+        {
+            var errors = validationException.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).Distinct().ToArray());
+
+            var validationTitle = _messageService.GetMessage(MessageKeys.Validation.ValidationErrorsTitle);
+            var validationMessage = _messageService.GetMessage(MessageKeys.Validation.ValidationErrorsMessage);
+
+            var validationProblemDetails = new ValidationProblemDetails(errors)
+            {
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                Title = validationTitle,
+                Status = (int)HttpStatusCode.BadRequest,
+                Instance = httpContext.Request.Path,
+                Extensions =
+                {
+                    ["traceId"] = httpContext.TraceIdentifier,
+                    ["isSuccess"] = false,
+                    ["message"] = validationMessage
+                }
+            };
+
+            if (httpContext.Request.Headers.TryGetValue("X-Correlation-ID", out var validationCorrelationId))
+            {
+                validationProblemDetails.Extensions["correlationId"] = validationCorrelationId.ToString();
+            }
+
+            httpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            httpContext.Response.ContentType = "application/problem+json";
+
+            var jsonValidation = JsonSerializer.Serialize(validationProblemDetails, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            });
+
+            await httpContext.Response.WriteAsync(jsonValidation, cancellationToken);
+            return true;
+        }
+
         var (statusCode, title, detail) = MapException(exception);
 
         _logger.LogError(exception,

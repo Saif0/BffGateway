@@ -13,6 +13,7 @@ public static class MessageKeys
         public const string UsernameRequired = "UsernameRequired";
         public const string UsernameMaxLength = "UsernameMaxLength";
         public const string PasswordRequired = "PasswordRequired";
+        public const string PasswordPolicy = "PasswordPolicy";
         public const string AmountGreaterThanZero = "AmountGreaterThanZero";
         public const string AmountMaxValue = "AmountMaxValue";
         public const string CurrencyRequired = "CurrencyRequired";

@@ -165,4 +165,8 @@ circuit-breaker-full:
 	@echo ""
 	@bash scripts/test-circuit-breaker.sh
 
+# Tests Run All tests
+tests-run-all:
+	dotnet test tests/BffGateway.Application.Tests/
+	
 
