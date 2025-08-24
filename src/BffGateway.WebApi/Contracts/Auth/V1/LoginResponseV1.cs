@@ -6,7 +6,7 @@ public record LoginResponseV1(
     bool IsSuccess,
     string? Message,
     string? Jwt,
-    string? ExpiresAt
+    DateTime? ExpiresAt
 ) : ApiResponseBase(IsSuccess, Message);
 
 

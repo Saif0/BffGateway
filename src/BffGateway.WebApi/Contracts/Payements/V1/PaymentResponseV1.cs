@@ -7,5 +7,5 @@ public record CreatePaymentResponseV1(
     string? Message,
     string? PaymentId,
     string? ProviderReference,
-    string? ProcessedAt
+    DateTime? ProcessedAt
 ) : ApiResponseBase(IsSuccess, Message);

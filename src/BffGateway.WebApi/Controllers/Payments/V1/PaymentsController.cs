@@ -38,7 +38,7 @@ public class PaymentsController : ControllerBase
             result.IsSuccess ? "Payment processed successfully" : "Payment failed",
             result.PaymentId,
             result.ProviderReference,
-            result.ProcessedAt?.ToString("O")
+            result.ProcessedAt
         );
 
         if (result.IsSuccess)

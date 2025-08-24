@@ -36,7 +36,7 @@ public class AuthController : ControllerBase
             result.IsSuccess,
             result.IsSuccess ? "Login successful" : "Login failed",
             result.Jwt,
-            result.ExpiresAt?.ToString("O")
+            result.ExpiresAt
         );
 
         if (result.IsSuccess)
