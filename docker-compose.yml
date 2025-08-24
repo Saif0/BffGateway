@@ -1,0 +1,37 @@
+services:
+  dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    environment:
+      - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
+    ports:
+      - "18888:18888" # UI
+      - "18889:18889" # OTLP gRPC receiver
+
+  mockprovider:
+    build:
+      context: .
+      dockerfile: src/MockProvider/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "5001:8080"
+    depends_on:
+      - dashboard
+
+  webapi:
+    build:
+      context: .
+      dockerfile: src/BffGateway.WebApi/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Provider__BaseUrl=http://mockprovider:8080
+      - Observability__EnableOpenTelemetry=true
+      - Observability__Otlp__Endpoint=http://dashboard:18889
+      - Observability__Otlp__Protocol=Grpc
+    ports:
+      - "5180:8080"
+    depends_on:
+      - mockprovider
+      - dashboard

@@ -30,9 +30,9 @@ export const options = {
 
 // Test data
 const users = [
-  { username: "testuser1", password: "password123" },
-  { username: "testuser2", password: "password456" },
-  { username: "testuser3", password: "password789" },
+  { username: "testuser1", password: "Password123" },
+  { username: "testuser2", password: "Password456" },
+  { username: "testuser3", password: "Password789" },
 ];
 
 const paymentRequests = [

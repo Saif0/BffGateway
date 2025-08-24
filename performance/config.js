@@ -11,7 +11,7 @@ function num(name, fallback) {
 }
 
 export const bff = {
-  baseUrl: env("BFF_BASE_URL", "http://localhost:5000"),
+  baseUrl: env("BFF_BASE_URL", "http://localhost:5180"),
   rps: num("BFF_RPS", 1000),
   duration: env("BFF_DURATION", "1m"),
   preAllocatedVUs: num("BFF_PREALLOC_VUS", 200),
