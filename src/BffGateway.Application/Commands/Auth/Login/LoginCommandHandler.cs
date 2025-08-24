@@ -29,6 +29,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
                 providerResponse.Success,
                 providerResponse.Success ? providerResponse.Token : null,
                 providerResponse.Success ? providerResponse.ExpiresAt : null,
+                providerResponse.Success ? "Login successful" : "Login failed",
                 providerResponse.StatusCode
             );
 
@@ -39,11 +40,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
             }
             else
             {
-                // Log the error
                 _logger.LogWarning("Login request failed for username: {Username}, StatusCode: {StatusCode}",
                     request.Username, response.UpstreamStatusCode);
-                // return exception 
-                throw new Exception($"Login request failed for username: {request.Username}, StatusCode: {response.UpstreamStatusCode}");
             }
 
             return response;
@@ -51,7 +49,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing login request for username: {Username}", request.Username);
-            return new LoginResponseDto(false, null, null, 500);
+            return new LoginResponseDto(false, null, null, "Internal server error", 500);
         }
     }
 }

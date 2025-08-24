@@ -1,6 +1,6 @@
 using BffGateway.Application.Commands.Payments.CreatePayment;
 using BffGateway.Application.Common.Enums;
-using BffGateway.WebApi.Models.V1;
+using BffGateway.WebApi.Contracts.Payements.V1;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -33,13 +33,13 @@ public class PaymentsController : ControllerBase
         var command = new CreatePaymentCommand(request.Amount, request.Currency, request.DestinationAccount, scenario);
         var result = await _mediator.Send(command, cancellationToken);
 
-        var response = new CreatePaymentResponseV1
-        {
-            IsSuccess = result.IsSuccess,
-            PaymentId = result.PaymentId,
-            ProviderReference = result.ProviderReference,
-            ProcessedAt = result.ProcessedAt?.ToString("O") // ISO 8601 format
-        };
+        var response = new CreatePaymentResponseV1(
+            result.IsSuccess,
+            result.IsSuccess ? "Payment processed successfully" : "Payment failed",
+            result.PaymentId,
+            result.ProviderReference,
+            result.ProcessedAt?.ToString("O")
+        );
 
         if (result.IsSuccess)
         {

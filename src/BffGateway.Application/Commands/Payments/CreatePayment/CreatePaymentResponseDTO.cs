@@ -5,6 +5,7 @@ public sealed record CreatePaymentResponseDTO(
     string? PaymentId,
     string? ProviderReference,
     DateTime? ProcessedAt,
+    string? Message = null,
     int? UpstreamStatusCode = null);
 
 

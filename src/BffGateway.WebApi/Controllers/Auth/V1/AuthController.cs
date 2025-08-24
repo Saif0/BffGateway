@@ -32,12 +32,12 @@ public class AuthController : ControllerBase
         var command = new LoginCommand(request.Username, request.Password, scenario);
         var result = await _mediator.Send(command, cancellationToken);
 
-        var response = new LoginResponseV1
-        {
-            IsSuccess = result.IsSuccess,
-            Jwt = result.Jwt,
-            ExpiresAt = result.ExpiresAt?.ToString("O") // ISO 8601 format
-        };
+        var response = new LoginResponseV1(
+            result.IsSuccess,
+            result.IsSuccess ? "Login successful" : "Login failed",
+            result.Jwt,
+            result.ExpiresAt?.ToString("O")
+        );
 
         if (result.IsSuccess)
         {

@@ -38,17 +38,16 @@ public class AuthController : ControllerBase
         var command = new LoginCommand(request.Username, request.Password, scenario);
         var result = await _mediator.Send(command, cancellationToken);
 
-        var response = new LoginResponseV2
-        {
-            Success = result.IsSuccess,
-            Token = new TokenInfo
-            {
-                AccessToken = result.Jwt ?? string.Empty,
-                ExpiresAt = result.ExpiresAt,
-                TokenType = "Bearer"
-            },
-            User = result.IsSuccess ? new UserInfo { Username = request.Username } : null
-        };
+        var response = new LoginResponseV2(
+            result.IsSuccess,
+            result.IsSuccess ? "Login successful" : "Login failed",
+            new TokenInfo(
+                result.Jwt ?? string.Empty,
+                result.ExpiresAt,
+                "Bearer"
+            ),
+            result.IsSuccess ? new UserInfo(request.Username) : null
+        );
 
         if (result.IsSuccess)
         {

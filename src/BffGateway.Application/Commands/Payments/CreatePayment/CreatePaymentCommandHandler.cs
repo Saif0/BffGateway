@@ -31,6 +31,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 providerResponse.Success ? providerResponse.TransactionId : null,
                 providerResponse.Success ? providerResponse.ProviderRef : null,
                 providerResponse.Success ? providerResponse.ProcessedAt : null,
+                providerResponse.Success ? "Payment processed successfully" : "Payment failed",
                 providerResponse.StatusCode
             );
 
@@ -43,7 +44,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         {
             _logger.LogError(ex, "Error processing payment request for amount: {Amount} {Currency}",
                 request.Amount, request.Currency);
-            return new CreatePaymentResponseDTO(false, null, null, null, 500);
+            return new CreatePaymentResponseDTO(false, null, null, null, "Internal server error", 500);
         }
     }
 }
