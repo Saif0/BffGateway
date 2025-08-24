@@ -1,6 +1,8 @@
 using BffGateway.Application.Abstractions.Providers;
 using BffGateway.Application.Common.DTOs.Auth;
 using MediatR;
+using BffGateway.Application.Abstractions.Services;
+using BffGateway.Application.Constants;
 using Microsoft.Extensions.Logging;
 
 namespace BffGateway.Application.Commands.Auth.Login;
@@ -9,11 +11,13 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
 {
     private readonly IProviderClient _providerClient;
     private readonly ILogger<LoginCommandHandler> _logger;
+    private readonly IMessageService _messageService;
 
-    public LoginCommandHandler(IProviderClient providerClient, ILogger<LoginCommandHandler> logger)
+    public LoginCommandHandler(IProviderClient providerClient, ILogger<LoginCommandHandler> logger, IMessageService messageService)
     {
         _providerClient = providerClient;
         _logger = logger;
+        _messageService = messageService;
     }
 
     public async Task<LoginResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -29,7 +33,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
                 providerResponse.Success,
                 providerResponse.Success ? providerResponse.Token : null,
                 providerResponse.Success ? providerResponse.ExpiresAt : null,
-                providerResponse.Success ? "Login successful" : "Login failed",
+                providerResponse.Success ? _messageService.GetMessage(MessageKeys.Auth.LoginSuccess) : _messageService.GetMessage(MessageKeys.Auth.LoginFailed),
                 providerResponse.StatusCode
             );
 
@@ -49,7 +53,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing login request for username: {Username}", request.Username);
-            return new LoginResponseDto(false, null, null, "Internal server error", 500);
+            return new LoginResponseDto(false, null, null, _messageService.GetMessage(MessageKeys.Errors.InternalServerError), 500);
         }
     }
 }

@@ -40,7 +40,7 @@ public class AuthController : ControllerBase
 
         var response = new LoginResponseV2(
             result.IsSuccess,
-            result.IsSuccess ? "Login successful" : "Login failed",
+            result.Message,
             new TokenInfo(
                 result.Jwt ?? string.Empty,
                 result.ExpiresAt,

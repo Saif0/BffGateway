@@ -3,16 +3,20 @@ using Microsoft.AspNetCore.Mvc;
 using Polly.CircuitBreaker;
 using System.Net;
 using System.Text.Json;
+using BffGateway.Application.Abstractions.Services;
+using BffGateway.WebApi.Constants;
 
 namespace BffGateway.WebApi.Exceptions;
 
 public sealed class GlobalExceptionHandler : IExceptionHandler
 {
     private readonly ILogger<GlobalExceptionHandler> _logger;
+    private readonly IMessageService _messageService;
 
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
+    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IMessageService messageService)
     {
         _logger = logger;
+        _messageService = messageService;
     }
 
     public async ValueTask<bool> TryHandleAsync(
@@ -41,7 +45,6 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             }
         };
 
-        // Add correlation ID if available
         if (httpContext.Request.Headers.TryGetValue("X-Correlation-ID", out var correlationId))
         {
             problemDetails.Extensions["correlationId"] = correlationId.ToString();
@@ -61,44 +64,44 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         return true;
     }
 
-    private static (int StatusCode, string Title, string Detail) MapException(Exception exception)
+    private (int StatusCode, string Title, string Detail) MapException(Exception exception)
     {
         return exception switch
         {
             BrokenCircuitException => (
                 (int)HttpStatusCode.ServiceUnavailable,
-                "Service Unavailable",
-                "The upstream service is currently unavailable due to circuit breaker protection. Please try again later."
+                _messageService.GetMessage(MessageKeys.Errors.ServiceUnavailable),
+                _messageService.GetMessage(MessageKeys.Errors.ServiceUnavailableDetail)
             ),
             TaskCanceledException or OperationCanceledException => (
                 (int)HttpStatusCode.GatewayTimeout,
-                "Gateway Timeout",
-                "The request timed out while communicating with upstream services."
+                _messageService.GetMessage(MessageKeys.Errors.GatewayTimeout),
+                _messageService.GetMessage(MessageKeys.Errors.GatewayTimeoutDetail)
             ),
             HttpRequestException httpEx when httpEx.Message.Contains("timeout") => (
                 (int)HttpStatusCode.GatewayTimeout,
-                "Gateway Timeout",
-                "The request timed out while communicating with upstream services."
+                _messageService.GetMessage(MessageKeys.Errors.GatewayTimeout),
+                _messageService.GetMessage(MessageKeys.Errors.GatewayTimeoutDetail)
             ),
             HttpRequestException httpEx when httpEx.Message.Contains("connection") => (
                 (int)HttpStatusCode.BadGateway,
-                "Bad Gateway",
-                "Unable to establish connection with upstream services."
+                _messageService.GetMessage(MessageKeys.Errors.BadGateway),
+                _messageService.GetMessage(MessageKeys.Errors.BadGatewayDetail)
             ),
             ArgumentException or ArgumentNullException => (
                 (int)HttpStatusCode.BadRequest,
-                "Bad Request",
-                "The request contains invalid parameters."
+                _messageService.GetMessage(MessageKeys.Errors.BadRequest),
+                _messageService.GetMessage(MessageKeys.Errors.BadRequestDetail)
             ),
             UnauthorizedAccessException => (
                 (int)HttpStatusCode.Unauthorized,
-                "Unauthorized",
-                "Authentication is required to access this resource."
+                _messageService.GetMessage(MessageKeys.Errors.Unauthorized),
+                _messageService.GetMessage(MessageKeys.Errors.UnauthorizedDetail)
             ),
             _ => (
                 (int)HttpStatusCode.InternalServerError,
-                "Internal Server Error",
-                "An unexpected error occurred. Please try again later."
+                _messageService.GetMessage(MessageKeys.Errors.InternalServerError),
+                _messageService.GetMessage(MessageKeys.Errors.InternalServerErrorDetail)
             )
         };
     }

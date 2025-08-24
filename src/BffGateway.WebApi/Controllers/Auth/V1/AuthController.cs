@@ -34,7 +34,7 @@ public class AuthController : ControllerBase
 
         var response = new LoginResponseV1(
             result.IsSuccess,
-            result.IsSuccess ? "Login successful" : "Login failed",
+            result.Message,
             result.Jwt,
             result.ExpiresAt
         );

@@ -1,30 +1,43 @@
 using FluentValidation;
+using BffGateway.Application.Common.Validators;
+using BffGateway.Application.Abstractions.Services;
+using BffGateway.Application.Constants;
 
 namespace BffGateway.Application.Commands.Payments.CreatePayment;
 
-public class CreatePaymentCommandValidator : AbstractValidator<CreatePaymentCommand>
+public class CreatePaymentCommandValidator : LocalizedValidatorBase<CreatePaymentCommand>
 {
     private static readonly string[] SupportedCurrencies = { "USD", "EUR", "GBP", "CAD", "AUD" };
 
-    public CreatePaymentCommandValidator()
+    public CreatePaymentCommandValidator() : base()
+    {
+        ConfigureRules();
+    }
+
+    public CreatePaymentCommandValidator(IMessageService messageService) : base(messageService)
+    {
+        ConfigureRules();
+    }
+
+    private void ConfigureRules()
     {
         RuleFor(x => x.Amount)
             .GreaterThan(0)
-            .WithMessage("Amount must be greater than zero")
+            .WithMessage(GetLocalizedMessage(MessageKeys.Validation.AmountGreaterThanZero))
             .LessThanOrEqualTo(1000000)
-            .WithMessage("Amount must not exceed 1,000,000");
+            .WithMessage(GetLocalizedMessage(MessageKeys.Validation.AmountMaxValue));
 
         RuleFor(x => x.Currency)
             .NotEmpty()
-            .WithMessage("Currency is required")
+            .WithMessage(GetLocalizedMessage(MessageKeys.Validation.CurrencyRequired))
             .Must(BeASupportedCurrency)
-            .WithMessage($"Currency must be one of: {string.Join(", ", SupportedCurrencies)}");
+            .WithMessage(GetLocalizedMessageWithArgs(MessageKeys.Validation.CurrencyInvalid, string.Join(", ", SupportedCurrencies)));
 
         RuleFor(x => x.DestinationAccount)
             .NotEmpty()
-            .WithMessage("Destination account is required")
+            .WithMessage(GetLocalizedMessage(MessageKeys.Validation.DestinationAccountRequired))
             .MaximumLength(50)
-            .WithMessage("Destination account must not exceed 50 characters");
+            .WithMessage(GetLocalizedMessage(MessageKeys.Validation.DestinationAccountMaxLength));
     }
 
     private static bool BeASupportedCurrency(string currency)

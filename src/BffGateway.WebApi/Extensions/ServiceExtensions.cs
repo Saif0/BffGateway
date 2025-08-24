@@ -29,8 +29,8 @@ public static class ServiceExtensions
         var applicationAssembly = Assembly.Load("BffGateway.Application");
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(applicationAssembly));
 
-        // Add FluentValidation
-        services.AddValidatorsFromAssembly(applicationAssembly);
+        // Add FluentValidation with dependency injection support
+        services.AddValidatorsFromAssembly(applicationAssembly, ServiceLifetime.Scoped, includeInternalTypes: false);
 
         // Add Infrastructure layer
         services.AddInfrastructure(configuration);

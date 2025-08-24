@@ -15,6 +15,9 @@ public static class SwaggerExtensions
             // Configure enums to show as strings in Swagger
             c.SchemaFilter<EnumSchemaFilter>();
 
+            // Add Accept-Language header to all operations for localization testing
+            c.OperationFilter<AcceptLanguageOperationFilter>();
+
             // Hide obsolete (deprecated) actions from Swagger
             // c.IgnoreObsoleteActions();
             c.DocInclusionPredicate((docName, apiDesc) =>
@@ -33,12 +36,12 @@ public static class SwaggerExtensions
         {
             app.UseSwagger();
             app.UseSwaggerUI(c =>
-            {
-                // Put v2 first to make it default/primary
-                c.SwaggerEndpoint("/swagger/v2/swagger.json", "BFF Gateway API V2");
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "BFF Gateway API V1 (deprecated)");
-                c.DocumentTitle = "BFF Gateway API";
-            });
+{
+    // Put v2 first to make it default/primary
+    c.SwaggerEndpoint("/swagger/v2/swagger.json", "BFF Gateway API V2");
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "BFF Gateway API V1 (deprecated)");
+    c.DocumentTitle = "BFF Gateway API - Multi-Language Support";
+});
         }
 
         return app;

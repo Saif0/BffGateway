@@ -1,7 +1,9 @@
 using BffGateway.Application.Abstractions.Providers;
 using BffGateway.Application.Common.DTOs.Payment;
 using MediatR;
+using BffGateway.Application.Abstractions.Services;
 using Microsoft.Extensions.Logging;
+using BffGateway.Application.Constants;
 
 namespace BffGateway.Application.Commands.Payments.CreatePayment;
 
@@ -9,11 +11,13 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
 {
     private readonly IProviderClient _providerClient;
     private readonly ILogger<CreatePaymentCommandHandler> _logger;
+    private readonly IMessageService _messageService;
 
-    public CreatePaymentCommandHandler(IProviderClient providerClient, ILogger<CreatePaymentCommandHandler> logger)
+    public CreatePaymentCommandHandler(IProviderClient providerClient, ILogger<CreatePaymentCommandHandler> logger, IMessageService messageService)
     {
         _providerClient = providerClient;
         _logger = logger;
+        _messageService = messageService;
     }
 
     public async Task<CreatePaymentResponseDTO> Handle(CreatePaymentCommand request, CancellationToken cancellationToken)
@@ -31,7 +35,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 providerResponse.Success ? providerResponse.TransactionId : null,
                 providerResponse.Success ? providerResponse.ProviderRef : null,
                 providerResponse.Success ? providerResponse.ProcessedAt : null,
-                providerResponse.Success ? "Payment processed successfully" : "Payment failed",
+                providerResponse.Success ? _messageService.GetMessage(MessageKeys.Payments.PaymentSuccess) : _messageService.GetMessage(MessageKeys.Payments.PaymentFailed),
                 providerResponse.StatusCode
             );
 
@@ -44,7 +48,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         {
             _logger.LogError(ex, "Error processing payment request for amount: {Amount} {Currency}",
                 request.Amount, request.Currency);
-            return new CreatePaymentResponseDTO(false, null, null, null, "Internal server error", 500);
+            return new CreatePaymentResponseDTO(false, null, null, null, _messageService.GetMessage(MessageKeys.Errors.InternalServerError), 500);
         }
     }
 }

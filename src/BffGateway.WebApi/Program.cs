@@ -16,11 +16,14 @@ builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddCustomValidation();
 builder.Services.AddCustomSwagger();
 builder.Services.AddCustomObservability(builder.Configuration);
+builder.Services.AddCustomLocalization(builder.Configuration);
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
+app.UseStaticFiles(); // Enable serving static files from wwwroot
 app.UseCustomSwagger();
+app.UseCustomLocalization();
 app.UseCustomMiddleware();
 
 try

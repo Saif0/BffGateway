@@ -41,7 +41,7 @@ public class PaymentsController : ControllerBase
 
         var response = new CreatePaymentResponseV2(
             result.IsSuccess,
-            result.IsSuccess ? "Payment processed successfully" : "Payment failed",
+            result.Message,
             result.PaymentId,
             result.ProviderReference,
             result.ProcessedAt
