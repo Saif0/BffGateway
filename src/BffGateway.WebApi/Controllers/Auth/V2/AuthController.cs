@@ -1,6 +1,6 @@
 using BffGateway.Application.Commands.Auth.Login;
 using BffGateway.Application.Common.Enums;
-using BffGateway.WebApi.Models.V2;
+using BffGateway.WebApi.Contracts.V2;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;

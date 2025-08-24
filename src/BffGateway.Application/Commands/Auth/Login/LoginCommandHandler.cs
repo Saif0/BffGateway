@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BffGateway.Application.Commands.Auth.Login;
 
-public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDTO>
+public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDto>
 {
     private readonly IProviderClient _providerClient;
     private readonly ILogger<LoginCommandHandler> _logger;
@@ -16,7 +16,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDT
         _logger = logger;
     }
 
-    public async Task<LoginResponseDTO> Handle(LoginCommand request, CancellationToken cancellationToken)
+    public async Task<LoginResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Processing login request for username: {Username}", request.Username);
 
@@ -25,7 +25,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDT
             var providerRequest = new ProviderAuthRequest(request.Username, request.Password);
             var providerResponse = await _providerClient.AuthenticateAsync(providerRequest, request.Scenario, cancellationToken);
 
-            var response = new LoginResponseDTO(
+            var response = new LoginResponseDto(
                 providerResponse.Success,
                 providerResponse.Success ? providerResponse.Token : null,
                 providerResponse.Success ? providerResponse.ExpiresAt : null,
@@ -51,7 +51,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDT
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing login request for username: {Username}", request.Username);
-            return new LoginResponseDTO(false, null, null, 500);
+            return new LoginResponseDto(false, null, null, 500);
         }
     }
 }
