@@ -30,9 +30,9 @@ export const options = {
 
 // Test data
 const users = [
-  { username: "testuser1", password: "Password123" },
-  { username: "testuser2", password: "Password456" },
-  { username: "testuser3", password: "Password789" },
+  { username: "testuser1", password: "PaPassword123" },
+  { username: "testuser2", password: "PaPassword456" },
+  { username: "testuser3", password: "PaPassword789" },
 ];
 
 const paymentRequests = [
@@ -54,9 +54,6 @@ export default function () {
   const paymentRequest =
     paymentRequests[Math.floor(Math.random() * paymentRequests.length)];
 
-  // Test login endpoint (v1)
-  testLoginV1(user);
-
   // Test login endpoint (v2)
   testLoginV2(user);
 
@@ -64,35 +61,6 @@ export default function () {
   testPayment(paymentRequest);
 
   sleep(Math.random() * 2); // Random sleep between 0-2 seconds
-}
-
-function testLoginV1(user) {
-  const loginPayload = JSON.stringify({
-    username: user.username,
-    password: user.password,
-  });
-
-  const params = {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  };
-
-  const response = http.post(
-    `${bff.baseUrl}/v1/auth/login`,
-    loginPayload,
-    params
-  );
-
-  const success = check(response, {
-    "Login v1 status is 200": (r) => r.status === 200,
-    "Login v1 has success field": (r) =>
-      JSON.parse(r.body).isSuccess !== undefined,
-    "Login v1 response time < 150ms": (r) => r.timings.duration < 150,
-  });
-
-  errorRate.add(!success);
-  responseTime.add(response.timings.duration);
 }
 
 function testLoginV2(user) {
