@@ -48,6 +48,8 @@ public class StructuredHttpLoggingHandler : DelegatingHandler
         // Use LogContext to add request-scoped properties
         using (LogContext.PushProperty("RequestId", requestId))
         using (LogContext.PushProperty("RequestType", "Outbound"))
+        using (LogContext.PushProperty("TraceId", Activity.Current?.TraceId.ToString()))
+        using (LogContext.PushProperty("SpanId", Activity.Current?.SpanId.ToString()))
         {
             await LogOutboundRequestAsync(request, requestId);
 

@@ -46,10 +46,12 @@ public class StructuredRequestLoggingMiddleware
         var requestId = Guid.NewGuid().ToString();
         var stopwatch = Stopwatch.StartNew();
 
-        // Use LogContext to add request-scoped properties
+        // Use LogContext to add request-scoped properties (including distributed trace IDs)
         using (LogContext.PushProperty("CorrelationId", correlationId))
         using (LogContext.PushProperty("RequestId", requestId))
         using (LogContext.PushProperty("RequestType", "Inbound"))
+        using (LogContext.PushProperty("TraceId", Activity.Current?.TraceId.ToString()))
+        using (LogContext.PushProperty("SpanId", Activity.Current?.SpanId.ToString()))
         {
             await LogInboundRequestAsync(context, correlationId, requestId);
 
