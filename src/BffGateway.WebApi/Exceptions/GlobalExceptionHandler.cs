@@ -4,7 +4,7 @@ using Polly.CircuitBreaker;
 using System.Net;
 using System.Text.Json;
 
-namespace BffGateway.WebApi.Handlers;
+namespace BffGateway.WebApi.Exceptions;
 
 public sealed class GlobalExceptionHandler : IExceptionHandler
 {
@@ -35,7 +35,9 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             Extensions = new Dictionary<string, object?>
             {
                 ["traceId"] = httpContext.TraceIdentifier,
-                ["timestamp"] = DateTimeOffset.UtcNow
+                ["timestamp"] = DateTimeOffset.UtcNow,
+                ["isSuccess"] = false,
+                ["message"] = detail
             }
         };
 
