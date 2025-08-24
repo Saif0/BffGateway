@@ -8,7 +8,9 @@ namespace BffGateway.WebApi.Controllers;
 
 [ApiController]
 [Route("health")]
-[ApiExplorerSettings(GroupName = "v2", IgnoreApi = false)]
+[ApiExplorerSettings(IgnoreApi = false)]
+[ApiVersion("1.0")]
+[ApiVersion("2.0")]
 [ApiVersionNeutral]
 public class HealthController : ControllerBase
 {

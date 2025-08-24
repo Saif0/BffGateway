@@ -5,6 +5,9 @@ using MediatR;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using BffGateway.Application.Common.Behaviors;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Versioning;
 
 namespace BffGateway.WebApi.Extensions;
 
@@ -20,8 +23,28 @@ public static class ServiceExtensions
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
 
-        // Add API versioning
-        services.AddApiVersioning();
+        // Add API versioning with proper configuration
+        services.AddApiVersioning(options =>
+        {
+            // Set default version to the latest (v2.0)
+            options.DefaultApiVersion = new ApiVersion(2, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+
+            // Configure how API versions are read from requests
+            options.ApiVersionReader = ApiVersionReader.Combine(
+                new UrlSegmentApiVersionReader() // Read from URL segment (e.g., /v2/auth/login)
+                                                 // new HeaderApiVersionReader("X-Api-Version"), // Read from header
+                                                 // new QueryStringApiVersionReader("version") // Read from query string
+            );
+        });
+
+        // Add API Explorer for Swagger versioning support
+        services.AddVersionedApiExplorer(options =>
+        {
+            // Automatically substitute version in controller names
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
 
         // Add MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
