@@ -90,7 +90,7 @@ function testLoginV2(user) {
 
   const success = check(response, {
     "Login v2 status is 200": (r) => r.status === 200,
-    "Login v2 has success field": () => body.success !== undefined,
+    "Login v2 has success field": () => body.isSuccess !== undefined,
     "Login v2 has token.accessToken": () =>
       typeof body.token?.accessToken === "string" &&
       body.token.accessToken.length > 0,
