@@ -9,20 +9,13 @@ public static class MiddlewareExtensions
     {
         app.UseExceptionHandler();
 
-        app.UseSerilogRequestLogging(opts =>
-        {
-            opts.EnrichDiagnosticContext = (ctx, http) =>
-            {
-                ctx.Set("CorrelationId", http.Request.Headers["X-Correlation-ID"].ToString());
-                ctx.Set("RequestHost", http.Request.Host.Value);
-                ctx.Set("RequestPath", http.Request.Path);
-            };
-        });
+        // Use our comprehensive structured request logging instead of basic Serilog request logging
+        app.UseMiddleware<StructuredRequestLoggingMiddleware>(Log.Logger);
 
         app.UseRouting();
 
-        // Correlation ID middleware
-        app.UseMiddleware<CorrelationIdMiddleware>();
+        // Correlation ID middleware (now handled by StructuredRequestLoggingMiddleware)
+        // app.UseMiddleware<CorrelationIdMiddleware>();
 
         // Deprecation headers for v1 endpoints
         app.UseMiddleware<DeprecationHeadersMiddleware>();

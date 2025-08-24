@@ -2,6 +2,7 @@ using BffGateway.Application.Abstractions.Providers;
 using BffGateway.Infrastructure.Configuration;
 using BffGateway.Infrastructure.Providers;
 using BffGateway.Infrastructure.Providers.MockProvider;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -19,8 +20,12 @@ public static class DependencyInjection
         // Configure provider options
         services.Configure<ProviderOptions>(configuration.GetSection(ProviderOptions.SectionName));
 
-        // Register delegating handler
+        // Register required services
+        services.AddHttpContextAccessor();
+
+        // Register delegating handlers
         services.AddTransient<ForwardHeadersHandler>();
+        services.AddTransient<StructuredHttpLoggingHandler>();
 
         // Register a SINGLETON circuit breaker policy so state persists across requests
         services.AddSingleton<IAsyncPolicy<HttpResponseMessage>>(sp =>
@@ -47,8 +52,9 @@ public static class DependencyInjection
                 PooledConnectionLifetime = TimeSpan.FromSeconds(5),
             };
         })
+        .AddHttpMessageHandler<StructuredHttpLoggingHandler>()
         .AddHttpMessageHandler<ForwardHeadersHandler>()
-        // Order matters: circuit breaker OUTER, then retry, then timeout
+        // Order matters: logging FIRST, then headers, then circuit breaker OUTER, then retry, then timeout
         .AddPolicyHandler((serviceProvider, request) =>
             serviceProvider.GetRequiredService<IAsyncPolicy<HttpResponseMessage>>())
         .AddPolicyHandler((serviceProvider, request) =>
