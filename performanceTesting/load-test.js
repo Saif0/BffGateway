@@ -60,7 +60,7 @@ export default function () {
   // Test payment endpoint
   testPayment(paymentRequest);
 
-  sleep(Math.random() * 2); // Random sleep between 0-2 seconds
+  // sleep(Math.random() * 2); // Random sleep between 0-2 seconds
 }
 
 function testLoginV2(user) {

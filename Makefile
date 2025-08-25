@@ -3,15 +3,21 @@
 SHELL := /bin/bash
 ROOT := $(PWD)
 
-.PHONY: help build clean run-gateway run-provider load bench bff-load bff-load-quick bff-load-heavy circuit-breaker tests-run-all docker-up docker-down docker-logs docker-restart docker-build
+.PHONY: help build clean run-gateway run-provider  bench bff-load bff-load-quick bff-load-heavy circuit-breaker tests-run-all docker-up docker-down docker-logs docker-restart docker-build
 
+
+BFF_BASE_URL ?= http://localhost:5180
+PROVIDER_BASE_URL ?= http://localhost:5001
+BFF_RPS ?= 1000
+BFF_DURATION ?= 1m
+BFF_PREALLOC_VUS ?= 200
+BFF_MAX_VUS ?= 1000
 help:
 	@echo "Available commands:"
 	@echo "  make build              - Restore and build all projects (Debug)"
 	@echo "  make clean              - Clean build outputs"
 	@echo "  make run-gateway        - Start only BFF Gateway on :5000"
 	@echo "  make run-provider       - Start only Mock Provider on :5001"
-	@echo "  make load               - Run k6 load test (requires k6 installed)"
 	@echo "  make bff-load           - Run BFF k6 test (env tunables below)"
 	@echo "  make bff-load-quick     - Quick 1m BFF test"
 	@echo "  make bff-load-heavy     - Heavier 10m BFF test"
@@ -30,13 +36,6 @@ help:
 	@echo "  make tests-run-all      - Run all unit tests"
 	@echo "  make bench              - Run benchmarks project"
 
-# Provider load test defaults (override like: make provider-load AUTH_RPS=300 DURATION=10m)
-PROVIDER_BASE_URL ?= http://localhost:5001
-AUTH_RPS ?= 200
-PAY_RPS ?= 200
-DURATION ?= 5m
-PREALLOC_VUS ?= 50
-MAX_VUS ?= 500
 
 build:
 	dotnet build --nologo -clp:Summary -v:m
@@ -46,23 +45,14 @@ clean:
 
 
 run-gateway:
-	@echo "Starting BFF Gateway on http://localhost:5000 ..."
-	@cd src/BffGateway.WebApi && dotnet run -c Release --urls "http://localhost:5000"
+	@echo "Starting BFF Gateway on ${BFF_BASE_URL} ..."
+	@cd src/BffGateway.WebApi && dotnet run -c Release --urls "${BFF_BASE_URL}"
 
 run-provider:
-	@echo "Starting Mock Provider on http://localhost:5001 ..."
-	@cd src/MockProvider && dotnet run -c Release --urls "http://localhost:5001"
-
-load:
-	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
-	k6 run performanceTesting/load-test.js
-
+	@echo "Starting Mock Provider on ${PROVIDER_BASE_URL} ..."
+	@cd src/MockProvider && dotnet run -c Release --urls "${PROVIDER_BASE_URL}"
 # BFF load test defaults (override like: make bff-load BFF_RPS=1500 BFF_DURATION=10m)
-BFF_BASE_URL ?= http://localhost:5180
-BFF_RPS ?= 1000
-BFF_DURATION ?= 1m
-BFF_PREALLOC_VUS ?= 200
-BFF_MAX_VUS ?= 1000
+
 
 bff-load:
 	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
@@ -78,7 +68,7 @@ bff-load-quick:
 	$(MAKE) bff-load BFF_RPS=50 BFF_DURATION=1m BFF_PREALLOC_VUS=20 BFF_MAX_VUS=1000
 
 bff-load-heavy:
-	$(MAKE) bff-load BFF_RPS=1000 BFF_DURATION=10m BFF_PREALLOC_VUS=200 BFF_MAX_VUS=2000
+	$(MAKE) bff-load BFF_RPS=1000 BFF_DURATION=10m BFF_PREALLOC_VUS=200 BFF_MAX_VUS=1000
 
 
 
