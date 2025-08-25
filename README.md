@@ -410,6 +410,140 @@ if (scenario == SimulationScenario.LimitExceeded)
 - **Demonstrates fast-fail protection** when provider is unavailable
 - **Proves SLA compliance** under both normal and degraded conditions
 
+## 🚀 Performance Testing & Resiliency Validation
+
+### 📊 Performance Targets (Assignment Requirements)
+
+| Metric             | Target               | Implementation                              |
+| ------------------ | -------------------- | ------------------------------------------- |
+| **Throughput**     | 1000 RPS sustained   | k6 constant-arrival-rate executor           |
+| **Latency p95**    | < 150ms              | Validated with BFF + provider (80ms avg)    |
+| **Error Rate**     | < 1%                 | Circuit breaker protection + retry policies |
+| **Duration**       | 10 minutes sustained | Demonstrates production stability           |
+| **Resource Usage** | Stable, no leaks     | Stateless design + proper disposal          |
+
+### 🎯 Load Testing Results
+
+**Start with Quick Test (1 minute) - Recommended First:**
+
+```bash
+make bff-load-quick
+# BFF_RPS=1000 BFF_DURATION=1m
+```
+
+> **📹 [Quick Load Test Demo - 1 Minute @ 1000 RPS]**
+>
+> [![asciicast](https://asciinema.org/a/735671.svg)](https://asciinema.org/a/735671)>
+> _Quick validation of BFF Gateway handling 1000 RPS for 1 minute - ideal for development testing_
+
+**Production Load Test (10 minutes sustained):**
+
+```bash
+make bff-load-heavy
+# BFF_RPS=1000 BFF_DURATION=10m BFF_MAX_VUS=1000
+```
+
+> **📹 [Production Load Test Demo - 10 Minutes @ 1000 RPS]**
+>
+> [![asciicast](https://asciinema.org/a/735682.svg)](https://asciinema.org/a/735682)
+>
+> _Full production load test demonstrating sustained 1000 RPS for 10 minutes with p95 < 150ms and error rate < 1%_
+
+### 📈 Resource Utilization Under Load
+
+#### CPU Performance Under Heavy Load
+
+![CPU Under Heavy Load](docs/images/AspireCpuUnderHeavyLoad.png)
+
+_CPU utilization during sustained 1000 RPS load showing efficient resource usage and stability_
+
+#### Memory Performance Under Heavy Load
+
+![Memory Under Heavy Load](docs/images/AspireMemoryUnderHeavyLoad.png)
+
+_Memory consumption during sustained load demonstrating no memory leaks and stable resource patterns_
+
+**Custom Load Test:**
+
+```bash
+BFF_RPS=1500 BFF_DURATION=5m make bff-load
+```
+
+### 🛡️ Circuit Breaker & Retry Policy Validation
+
+> **📹 [Circuit Breaker Demo - Polly Policy in Action]**
+>
+> ![Circuit Breaker Test](docs/images/circuit-breaker-demo.gif)
+>
+> _Live demonstration of circuit breaker opening, failing fast, and automatically recovering_
+
+**Circuit Breaker Test:**
+
+```bash
+make circuit-breaker
+```
+
+**What this test demonstrates:**
+
+1. **Failure Generation**: Sends failing requests to trigger circuit breaker (5 failures = open)
+2. **Fast Failure**: `/health/ready` shows "Degraded" status when circuit is open
+3. **Automatic Recovery**: Circuit closes after 30 seconds, health returns to "Healthy"
+4. **Performance**: Fast-fail responses (~10ms) vs normal (~80ms) during circuit open
+
+> **📹 [Retry Policy Demo - Exponential Backoff with Jitter]**
+>
+> ![Retry Policy Test](docs/images/retry-policy-demo.gif)
+>
+> _Shows retry attempts with exponential backoff and jitter preventing thundering herd_
+
+### ⚡ k6 Configuration Options
+
+All tests are configurable via environment variables (see `performanceTesting/config.js`):
+
+```bash
+# Performance targets
+BFF_BASE_URL=http://localhost:5180     # BFF Gateway endpoint
+BFF_RPS=1000                          # Requests per second
+BFF_DURATION=10m                      # Test duration
+BFF_P95_MS=150                        # p95 latency threshold
+BFF_MAX_ERROR_RATE=0.01              # 1% error rate threshold
+
+# Virtual user scaling
+BFF_PREALLOC_VUS=200                  # Pre-allocated virtual users
+BFF_MAX_VUS=1000                      # Maximum virtual users
+
+# Circuit breaker testing
+BFF_CB_BREAK_SECONDS=30               # Circuit breaker open duration
+BFF_CB_CLOSE_BUFFER_SECONDS=5        # Buffer before recovery test
+```
+
+### 📈 Performance Analysis & Metrics
+
+The k6 scripts validate:
+
+- **HTTP success rates** across all endpoints (v1 auth, v2 auth, v1 payments, v2 payments)
+- **Response time percentiles** (p50, p95, p99) with automatic thresholds
+- **Health endpoint behavior** during circuit breaker events
+- **Error categorization** (4xx client errors vs 5xx provider errors)
+- **Correlation ID propagation** end-to-end tracking
+
+**Sample k6 output:**
+
+```
+✓ Login v2 status is 200
+✓ Login v2 response time < 150ms
+✓ Payment status is 200
+✓ Circuit breaker activations detected: 3
+✓ Provider became Healthy on /health/ready
+
+checks.........................: 100.00% ✓ 45123    ✗ 0
+data_received..................: 15 MB   25 kB/s
+data_sent......................: 8.1 MB  13 kB/s
+http_req_duration..............: avg=95ms  p95=140ms
+http_req_failed................: 0.15%   ✓ 68      ✗ 45055
+http_reqs......................: 45123   75.2/s
+```
+
 ## Resiliency (Polly per client)
 
 Configured in `BffGateway.Infrastructure.DependencyInjection`:
@@ -444,13 +578,13 @@ The **Aspire Dashboard** provides comprehensive observability for the entire BFF
 
 #### 🎯 Overview Dashboard
 
-![Aspire Overview](Documentation/pics/Aspire.png)
+![Aspire Overview](docs/images/Aspire.png)
 
 _Complete system overview showing services, health status, and resource utilization_
 
 #### 📈 Metrics & Performance
 
-![Aspire Metrics](Documentation/pics/AspireMetrics.png)
+![Aspire Metrics](docs/images/AspireMetrics.png)
 
 _Real-time metrics including:_
 
@@ -462,7 +596,7 @@ _Real-time metrics including:_
 
 #### 🔗 Distributed Tracing
 
-![Aspire Traces](Documentation/pics/AspireTraces.png)
+![Aspire Traces](docs/images/AspireTraces.png)
 
 _End-to-end request tracing showing:_
 
@@ -632,140 +766,6 @@ curl http://localhost:5180/health/ready
 - **Healthy responses**: ~20-80ms (includes provider ping)
 - **Circuit open responses**: ~5-10ms (fast-fail, no provider call)
 - **Connection timeout**: ~5000ms (respects timeout settings)
-
-## 🚀 Performance Testing & Resiliency Validation
-
-### 📊 Performance Targets (Assignment Requirements)
-
-| Metric             | Target               | Implementation                              |
-| ------------------ | -------------------- | ------------------------------------------- |
-| **Throughput**     | 1000 RPS sustained   | k6 constant-arrival-rate executor           |
-| **Latency p95**    | < 150ms              | Validated with BFF + provider (80ms avg)    |
-| **Error Rate**     | < 1%                 | Circuit breaker protection + retry policies |
-| **Duration**       | 10 minutes sustained | Demonstrates production stability           |
-| **Resource Usage** | Stable, no leaks     | Stateless design + proper disposal          |
-
-### 🎯 Load Testing Results
-
-**Start with Quick Test (1 minute) - Recommended First:**
-
-```bash
-make bff-load-quick
-# BFF_RPS=1000 BFF_DURATION=1m
-```
-
-> **📹 [Quick Load Test Demo - 1 Minute @ 1000 RPS]**
->
-> [![asciicast](https://asciinema.org/a/735671.svg)](https://asciinema.org/a/735671)>
-> _Quick validation of BFF Gateway handling 1000 RPS for 1 minute - ideal for development testing_
-
-**Production Load Test (10 minutes sustained):**
-
-```bash
-make bff-load-heavy
-# BFF_RPS=1000 BFF_DURATION=10m BFF_MAX_VUS=1000
-```
-
-> **📹 [Production Load Test Demo - 10 Minutes @ 1000 RPS]**
->
-> [![asciicast](https://asciinema.org/a/735671.svg)](https://asciinema.org/a/735671)
->
-> _Full production load test demonstrating sustained 1000 RPS for 10 minutes with p95 < 150ms and error rate < 1%_
-
-### 📈 Resource Utilization Under Load
-
-#### CPU Performance Under Heavy Load
-
-![CPU Under Heavy Load](Documentation/pics/AspireCpuUnderHeavyLoad.png)
-
-_CPU utilization during sustained 1000 RPS load showing efficient resource usage and stability_
-
-#### Memory Performance Under Heavy Load
-
-![Memory Under Heavy Load](Documentation/pics/AspireMemoryUnderHeavyLoad.png)
-
-_Memory consumption during sustained load demonstrating no memory leaks and stable resource patterns_
-
-**Custom Load Test:**
-
-```bash
-BFF_RPS=1500 BFF_DURATION=5m make bff-load
-```
-
-### 🛡️ Circuit Breaker & Retry Policy Validation
-
-> **📹 [Circuit Breaker Demo - Polly Policy in Action]**
->
-> ![Circuit Breaker Test](docs/images/circuit-breaker-demo.gif)
->
-> _Live demonstration of circuit breaker opening, failing fast, and automatically recovering_
-
-**Circuit Breaker Test:**
-
-```bash
-make circuit-breaker
-```
-
-**What this test demonstrates:**
-
-1. **Failure Generation**: Sends failing requests to trigger circuit breaker (5 failures = open)
-2. **Fast Failure**: `/health/ready` shows "Degraded" status when circuit is open
-3. **Automatic Recovery**: Circuit closes after 30 seconds, health returns to "Healthy"
-4. **Performance**: Fast-fail responses (~10ms) vs normal (~80ms) during circuit open
-
-> **📹 [Retry Policy Demo - Exponential Backoff with Jitter]**
->
-> ![Retry Policy Test](docs/images/retry-policy-demo.gif)
->
-> _Shows retry attempts with exponential backoff and jitter preventing thundering herd_
-
-### ⚡ k6 Configuration Options
-
-All tests are configurable via environment variables (see `performanceTesting/config.js`):
-
-```bash
-# Performance targets
-BFF_BASE_URL=http://localhost:5180     # BFF Gateway endpoint
-BFF_RPS=1000                          # Requests per second
-BFF_DURATION=10m                      # Test duration
-BFF_P95_MS=150                        # p95 latency threshold
-BFF_MAX_ERROR_RATE=0.01              # 1% error rate threshold
-
-# Virtual user scaling
-BFF_PREALLOC_VUS=200                  # Pre-allocated virtual users
-BFF_MAX_VUS=1000                      # Maximum virtual users
-
-# Circuit breaker testing
-BFF_CB_BREAK_SECONDS=30               # Circuit breaker open duration
-BFF_CB_CLOSE_BUFFER_SECONDS=5        # Buffer before recovery test
-```
-
-### 📈 Performance Analysis & Metrics
-
-The k6 scripts validate:
-
-- **HTTP success rates** across all endpoints (v1 auth, v2 auth, v1 payments, v2 payments)
-- **Response time percentiles** (p50, p95, p99) with automatic thresholds
-- **Health endpoint behavior** during circuit breaker events
-- **Error categorization** (4xx client errors vs 5xx provider errors)
-- **Correlation ID propagation** end-to-end tracking
-
-**Sample k6 output:**
-
-```
-✓ Login v2 status is 200
-✓ Login v2 response time < 150ms
-✓ Payment status is 200
-✓ Circuit breaker activations detected: 3
-✓ Provider became Healthy on /health/ready
-
-checks.........................: 100.00% ✓ 45123    ✗ 0
-data_received..................: 15 MB   25 kB/s
-data_sent......................: 8.1 MB  13 kB/s
-http_req_duration..............: avg=95ms  p95=140ms
-http_req_failed................: 0.15%   ✓ 68      ✗ 45055
-http_reqs......................: 45123   75.2/s
-```
 
 ## ⚙️ Configuration & Settings
 
