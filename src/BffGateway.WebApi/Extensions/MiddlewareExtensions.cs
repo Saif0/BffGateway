@@ -10,7 +10,11 @@ public static class MiddlewareExtensions
         app.UseExceptionHandler();
 
         // Use our comprehensive structured request logging instead of basic Serilog request logging
-        app.UseMiddleware<StructuredRequestLoggingMiddleware>(Log.Logger);
+        var enableSerilog = app.Configuration.GetValue<bool>("Observability:EnableSerilog");
+        if (enableSerilog)
+        {
+            app.UseMiddleware<StructuredRequestLoggingMiddleware>(Log.Logger);
+        }
 
         // TESTING NOTE: To test OpenTelemetry logging, comment out the above line and uncomment below:
         // if (app.Environment.IsDevelopment())

@@ -64,7 +64,7 @@ bff-load:
 	k6 run performanceTesting/load-test.js
 
 bff-load-quick:
-	$(MAKE) bff-load BFF_RPS=50 BFF_DURATION=1m BFF_PREALLOC_VUS=20 BFF_MAX_VUS=1000
+	$(MAKE) bff-load BFF_RPS=1000 BFF_DURATION=1m BFF_PREALLOC_VUS=200 BFF_MAX_VUS=1000
 
 bff-load-heavy:
 	$(MAKE) bff-load BFF_RPS=1000 BFF_DURATION=10m BFF_PREALLOC_VUS=200 BFF_MAX_VUS=1000
@@ -92,7 +92,7 @@ tests-run-all:
 # Docker Compose commands
 docker-up:
 	@echo "Starting services with Docker Compose..."
-	@docker compose up -d
+	@docker compose  up --build -d
 
 docker-down:
 	@echo "Stopping Docker Compose services..."
@@ -108,4 +108,4 @@ docker-restart:
 
 docker-build:
 	@echo "Building Docker images..."
-	@docker compose build
+	@docker compose build 
