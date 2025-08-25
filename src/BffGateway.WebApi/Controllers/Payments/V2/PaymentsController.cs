@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Net;
+using BffGateway.WebApi.Extensions;
 
 namespace BffGateway.WebApi.Controllers.V2;
 
@@ -57,14 +58,7 @@ public class PaymentsController : ControllerBase
             var status = result.UpstreamStatusCode;
             _logger.LogWarning("Payment failed for amount: {Amount} {Currency} with upstream status: {Status}", request.Amount, request.Currency, status);
 
-            if (status == (int)HttpStatusCode.TooManyRequests)
-                return StatusCode((int)HttpStatusCode.TooManyRequests, response);
-            if (status == (int)HttpStatusCode.RequestTimeout)
-                return StatusCode((int)HttpStatusCode.GatewayTimeout, response);
-            if (status >= 500)
-                return StatusCode((int)HttpStatusCode.BadGateway, response);
-
-            return BadRequest(response);
+            return this.MapUpstreamStatusCode(response, status);
         }
     }
 }
