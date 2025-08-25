@@ -10,14 +10,35 @@ public static class ObservabilityExtensions
     public static IServiceCollection AddCustomObservability(this IServiceCollection services, IConfiguration configuration)
     {
         var enableOtel = configuration.GetValue<bool>("Observability:EnableOpenTelemetry");
-        var otlpEndpoint = configuration.GetValue<string>("Observability:Otlp:Endpoint") ?? "http://localhost:18889";
-        var otlpProtocolSetting = configuration.GetValue<string>("Observability:Otlp:Protocol") ?? "Grpc"; // "Grpc" or "HttpProtobuf"
-        var otlpProtocol = string.Equals(otlpProtocolSetting, "HttpProtobuf", StringComparison.OrdinalIgnoreCase)
-            ? OtlpExportProtocol.HttpProtobuf
-            : OtlpExportProtocol.Grpc;
 
         if (enableOtel)
         {
+            var otlpEndpoint = configuration.GetValue<string>("Observability:Otlp:Endpoint");
+            if (string.IsNullOrWhiteSpace(otlpEndpoint))
+            {
+                throw new InvalidOperationException("Missing required configuration 'Observability:Otlp:Endpoint' when OpenTelemetry is enabled.");
+            }
+
+            var otlpProtocolSetting = configuration.GetValue<string>("Observability:Otlp:Protocol");
+            if (string.IsNullOrWhiteSpace(otlpProtocolSetting))
+            {
+                throw new InvalidOperationException("Missing required configuration 'Observability:Otlp:Protocol' when OpenTelemetry is enabled. Allowed values: 'Grpc' or 'HttpProtobuf'.");
+            }
+
+            OtlpExportProtocol otlpProtocol;
+            if (string.Equals(otlpProtocolSetting, "Grpc", StringComparison.OrdinalIgnoreCase))
+            {
+                otlpProtocol = OtlpExportProtocol.Grpc;
+            }
+            else if (string.Equals(otlpProtocolSetting, "HttpProtobuf", StringComparison.OrdinalIgnoreCase))
+            {
+                otlpProtocol = OtlpExportProtocol.HttpProtobuf;
+            }
+            else
+            {
+                throw new InvalidOperationException("Invalid value for 'Observability:Otlp:Protocol'. Allowed values: 'Grpc' or 'HttpProtobuf'.");
+            }
+
             services.AddOpenTelemetry()
                 .ConfigureResource(resource => resource.AddService("BffGateway"))
                 .WithTracing(tracing => tracing
