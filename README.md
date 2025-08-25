@@ -647,25 +647,44 @@ curl http://localhost:5180/health/ready
 
 ### 🎯 Load Testing Results
 
-> **📹 [Load Test Demo - 1000 RPS Performance]**
->
-> ![Load Test Performance](docs/images/load-test-performance.gif)
->
-> _Demonstration of BFF Gateway handling 1000 RPS for 10 minutes with p95 latency < 150ms and error rate < 1%_
-
-**Quick Load Test (1 minute):**
+**Start with Quick Test (1 minute) - Recommended First:**
 
 ```bash
 make bff-load-quick
 # BFF_RPS=1000 BFF_DURATION=1m
 ```
 
-**Production Load Test (10 minutes):**
+> **📹 [Quick Load Test Demo - 1 Minute @ 1000 RPS]**
+>
+> [![asciicast](https://asciinema.org/a/735671.svg)](https://asciinema.org/a/735671)>
+> _Quick validation of BFF Gateway handling 1000 RPS for 1 minute - ideal for development testing_
+
+**Production Load Test (10 minutes sustained):**
 
 ```bash
 make bff-load-heavy
 # BFF_RPS=1000 BFF_DURATION=10m BFF_MAX_VUS=1000
 ```
+
+> **📹 [Production Load Test Demo - 10 Minutes @ 1000 RPS]**
+>
+> [![asciicast](https://asciinema.org/a/735671.svg)](https://asciinema.org/a/735671)
+>
+> _Full production load test demonstrating sustained 1000 RPS for 10 minutes with p95 < 150ms and error rate < 1%_
+
+### 📈 Resource Utilization Under Load
+
+#### CPU Performance Under Heavy Load
+
+![CPU Under Heavy Load](Documentation/pics/AspireCpuUnderHeavyLoad.png)
+
+_CPU utilization during sustained 1000 RPS load showing efficient resource usage and stability_
+
+#### Memory Performance Under Heavy Load
+
+![Memory Under Heavy Load](Documentation/pics/AspireMemoryUnderHeavyLoad.png)
+
+_Memory consumption during sustained load demonstrating no memory leaks and stable resource patterns_
 
 **Custom Load Test:**
 
