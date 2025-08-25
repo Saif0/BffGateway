@@ -3,7 +3,7 @@
 SHELL := /bin/bash
 ROOT := $(PWD)
 
-.PHONY: help build clean run-gateway run-provider  bench bff-load bff-load-quick bff-load-heavy circuit-breaker tests-run-all docker-up docker-down docker-logs docker-restart docker-build
+.PHONY: help build clean run-gateway run-provider   bff-bench bff-bench-quick bff-bench-heavy circuit-breaker tests-run-all docker-up docker-down docker-logs docker-restart docker-build
 
 
 BFF_BASE_URL ?= http://localhost:5180
@@ -18,9 +18,9 @@ help:
 	@echo "  make clean              - Clean build outputs"
 	@echo "  make run-gateway        - Start only BFF Gateway on :5000"
 	@echo "  make run-provider       - Start only Mock Provider on :5001"
-	@echo "  make bff-load           - Run BFF k6 test (env tunables below)"
-	@echo "  make bff-load-quick     - Quick 1m BFF test"
-	@echo "  make bff-load-heavy     - Heavier 10m BFF test"
+	@echo "  make bff-bench           - Run BFF k6 test (env tunables below)"
+	@echo "  make bff-bench-quick     - Quick Benchmark 1m BFF test"
+	@echo "  make bff-bench-heavy     - Heavier Benchmark 10m BFF test"
 	@echo ""
 	@echo "Docker Compose:"
 	@echo "  make docker-up          - Start all services with Docker Compose"
@@ -34,7 +34,6 @@ help:
 	@echo ""
 	@echo "Other:"
 	@echo "  make tests-run-all      - Run all unit tests"
-	@echo "  make bench              - Run benchmarks project"
 
 
 build:
@@ -54,7 +53,7 @@ run-provider:
 # BFF load test defaults (override like: make bff-load BFF_RPS=1500 BFF_DURATION=10m)
 
 
-bff-load:
+bff-bench:
 	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
 	@echo "Running BFF load: $(BFF_RPS)/s for $(BFF_DURATION) against $(BFF_BASE_URL)"
 	BFF_BASE_URL=$(BFF_BASE_URL) \
@@ -64,17 +63,14 @@ bff-load:
 	BFF_MAX_VUS=$(BFF_MAX_VUS) \
 	k6 run performanceTesting/load-test.js
 
-bff-load-quick:
-	$(MAKE) bff-load BFF_RPS=50 BFF_DURATION=1m BFF_PREALLOC_VUS=20 BFF_MAX_VUS=1000
+bff-bench-quick:
+	$(MAKE) bff-bench BFF_RPS=50 BFF_DURATION=1m BFF_PREALLOC_VUS=20 BFF_MAX_VUS=1000
 
-bff-load-heavy:
-	$(MAKE) bff-load BFF_RPS=1000 BFF_DURATION=10m BFF_PREALLOC_VUS=200 BFF_MAX_VUS=1000
+bff-bench-heavy:
+	$(MAKE) bff-bench BFF_RPS=1000 BFF_DURATION=10m BFF_PREALLOC_VUS=200 BFF_MAX_VUS=1000
 
 
 
-bench:
-	@echo "Running benchmarks..."
-	@cd tests/BffGateway.Benchmarks && dotnet run -c Release
 
 # Circuit Breaker Testing Commands
 circuit-breaker:
