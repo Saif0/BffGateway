@@ -12,6 +12,12 @@ public static class MiddlewareExtensions
         // Use our comprehensive structured request logging instead of basic Serilog request logging
         app.UseMiddleware<StructuredRequestLoggingMiddleware>(Log.Logger);
 
+        // TESTING NOTE: To test OpenTelemetry logging, comment out the above line and uncomment below:
+        // if (app.Environment.IsDevelopment())
+        // {
+        //     app.UseHttpLogging();
+        // }
+
         app.UseRouting();
 
         // Correlation ID middleware (now handled by StructuredRequestLoggingMiddleware)

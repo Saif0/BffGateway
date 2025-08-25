@@ -24,6 +24,7 @@
     <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
     <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.0" />
   </ItemGroup>
@@ -32,5 +33,7 @@
     <ProjectReference Include="..\BffGateway.Application\BffGateway.Application.csproj" />
     <ProjectReference Include="..\BffGateway.Infrastructure\BffGateway.Infrastructure.csproj" />
   </ItemGroup>
+
+  
 
 </Project>
