@@ -449,6 +449,26 @@ make bff-load-heavy
 >
 > _Full production load test demonstrating sustained 1000 RPS for 10 minutes with p95 < 150ms and error rate < 1%_
 
+### 🛡️ Circuit Breaker & Retry Policy Validation
+
+> **📹 [Circuit Breaker Demo - Polly Policy in Action]**
+>
+> [![asciicast](https://asciinema.org/a/735683.svg)](https://asciinema.org/a/735683)
+>
+> _Live demonstration of circuit breaker opening, failing fast, and automatically recovering_
+
+**Circuit Breaker Test:**
+
+```bash
+make circuit-breaker
+```
+
+**Custom Load Test:**
+
+```bash
+BFF_RPS=1500 BFF_DURATION=5m make bff-load
+```
+
 ### 📈 Resource Utilization Under Load
 
 #### CPU Performance Under Heavy Load
@@ -463,26 +483,6 @@ _CPU utilization during sustained 1000 RPS load showing efficient resource usage
 
 _Memory consumption during sustained load demonstrating no memory leaks and stable resource patterns_
 
-**Custom Load Test:**
-
-```bash
-BFF_RPS=1500 BFF_DURATION=5m make bff-load
-```
-
-### 🛡️ Circuit Breaker & Retry Policy Validation
-
-> **📹 [Circuit Breaker Demo - Polly Policy in Action]**
->
-> ![Circuit Breaker Test](docs/images/circuit-breaker-demo.gif)
->
-> _Live demonstration of circuit breaker opening, failing fast, and automatically recovering_
-
-**Circuit Breaker Test:**
-
-```bash
-make circuit-breaker
-```
-
 **What this test demonstrates:**
 
 1. **Failure Generation**: Sends failing requests to trigger circuit breaker (5 failures = open)
@@ -492,7 +492,7 @@ make circuit-breaker
 
 > **📹 [Retry Policy Demo - Exponential Backoff with Jitter]**
 >
-> ![Retry Policy Test](docs/images/retry-policy-demo.gif)
+> [![asciicast](https://asciinema.org/a/735687.svg)](https://asciinema.org/a/735687)
 >
 > _Shows retry attempts with exponential backoff and jitter preventing thundering herd_
 
