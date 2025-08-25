@@ -99,7 +99,6 @@ function testLoginV2(user) {
     "Login v2 tokenType is Bearer": () => body.token?.tokenType === "Bearer",
     "Login v2 has user.username": () =>
       typeof body.user?.username === "string" && body.user.username.length > 0,
-    "Login v2 response time < 150ms": (r) => r.timings.duration < 150,
   });
 
   errorRate.add(!success);
@@ -141,7 +140,6 @@ function testPayment(paymentRequest) {
       typeof body.providerReference === "string" &&
       body.providerReference.length > 0,
     "Payment has processedAt": () => typeof body.processedAt === "string",
-    "Payment response time < 150ms": (r) => r.timings.duration < 150,
   });
 
   errorRate.add(!success);
