@@ -13,7 +13,7 @@ export const options = {
       executor: "constant-arrival-rate",
       rate: 5, // 5 requests per second
       timeUnit: "1s",
-      duration: "10s", // Generate failures for 10 seconds
+      duration: "5s", // Generate failures for 10 seconds
       preAllocatedVUs: 3,
       maxVUs: 10,
       exec: "generateFailures",
@@ -22,7 +22,7 @@ export const options = {
       executor: "constant-arrival-rate",
       rate: 3, // 3 requests per second during circuit open
       timeUnit: "1s",
-      duration: "35s", // Test during circuit breaker period
+      duration: "15s", // Test during circuit breaker period
       startTime: "11s", // Start after trigger phase
       preAllocatedVUs: 5,
       maxVUs: 5,
