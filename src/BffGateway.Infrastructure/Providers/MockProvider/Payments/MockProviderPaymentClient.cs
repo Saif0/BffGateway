@@ -2,6 +2,9 @@ using BffGateway.Application.Common.DTOs.Payment;
 using BffGateway.Application.Common.Enums;
 using BffGateway.Infrastructure.Providers.MockProvider.DTOs;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using BffGateway.Infrastructure.Configuration;
+using BffGateway.Infrastructure.Providers.MockProvider.Endpoints;
 using Polly.CircuitBreaker;
 using System.Diagnostics;
 using System.Text;
@@ -14,6 +17,8 @@ public class MockProviderPaymentClient
     private readonly HttpClient _httpClient;
     private readonly ILogger<MockProviderPaymentClient> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
+    private const string PayPath = MockProviderEndpoints.Pay;
+    private const string ScenarioQueryName = MockProviderEndpoints.ScenarioQueryName;
 
     public MockProviderPaymentClient(HttpClient httpClient, ILogger<MockProviderPaymentClient> logger)
     {
@@ -39,12 +44,12 @@ public class MockProviderPaymentClient
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var sw = Stopwatch.StartNew();
-            var url = $"/api/pay?scenario={scenario}";
+            var url = $"{PayPath}?{ScenarioQueryName}={scenario}";
             var response = await _httpClient.PostAsync(url, content, cancellationToken);
             sw.Stop();
 
             _logger.LogInformation("MockProvider call {Path} ended with {StatusCode} in {ElapsedMs}ms",
-                "/api/pay", (int)response.StatusCode, sw.ElapsedMilliseconds);
+                PayPath, (int)response.StatusCode, sw.ElapsedMilliseconds);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -68,7 +73,7 @@ public class MockProviderPaymentClient
         }
         catch (BrokenCircuitException bce)
         {
-            _logger.LogWarning(bce, "Circuit breaker open for MockProvider {Path}", "/api/pay");
+            _logger.LogWarning(bce, "Circuit breaker open for MockProvider {Path}", PayPath);
             throw;
         }
         catch (Exception ex)

@@ -3,6 +3,6 @@ using MediatR;
 
 namespace BffGateway.Application.Commands.Health.GetLiveHealth;
 
-public record GetLiveHealthCommand(string? CorrelationId) : IRequest<HealthReportDto>;
+public sealed record GetLiveHealthCommand(string? CorrelationId) : IRequest<HealthReportDto>;
 
 

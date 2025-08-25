@@ -2,6 +2,9 @@ using BffGateway.Application.Common.DTOs.Auth;
 using BffGateway.Application.Common.Enums;
 using BffGateway.Infrastructure.Providers.MockProvider.DTOs;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using BffGateway.Infrastructure.Configuration;
+using BffGateway.Infrastructure.Providers.MockProvider.Endpoints;
 using Polly.CircuitBreaker;
 using System.Diagnostics;
 using System.Text;
@@ -14,6 +17,8 @@ public class MockProviderAuthClient
     private readonly HttpClient _httpClient;
     private readonly ILogger<MockProviderAuthClient> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
+    private const string AuthenticatePath = MockProviderEndpoints.Authenticate;
+    private const string ScenarioQueryName = MockProviderEndpoints.ScenarioQueryName;
 
     public MockProviderAuthClient(HttpClient httpClient, ILogger<MockProviderAuthClient> logger)
     {
@@ -38,12 +43,12 @@ public class MockProviderAuthClient
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var sw = Stopwatch.StartNew();
-            var url = $"/api/authenticate?scenario={scenario}";
+            var url = $"{AuthenticatePath}?{ScenarioQueryName}={scenario}";
             var response = await _httpClient.PostAsync(url, content, cancellationToken);
             sw.Stop();
 
             _logger.LogInformation("MockProvider call {Path} ended with {StatusCode} in {ElapsedMs}ms",
-                "/api/authenticate", (int)response.StatusCode, sw.ElapsedMilliseconds);
+                AuthenticatePath, (int)response.StatusCode, sw.ElapsedMilliseconds);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -63,7 +68,7 @@ public class MockProviderAuthClient
         }
         catch (BrokenCircuitException bce)
         {
-            _logger.LogWarning(bce, "Circuit breaker open for MockProvider {Path}", "/api/authenticate");
+            _logger.LogWarning(bce, "Circuit breaker open for MockProvider {Path}", AuthenticatePath);
             throw;
         }
         catch (Exception ex)

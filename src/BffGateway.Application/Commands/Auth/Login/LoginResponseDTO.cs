@@ -1,6 +1,6 @@
 namespace BffGateway.Application.Commands.Auth.Login;
 
-public record LoginResponseDto(
+public sealed record LoginResponseDto(
     bool IsSuccess,
     string? Jwt,
     DateTime? ExpiresAt,

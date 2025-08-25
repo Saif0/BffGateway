@@ -1,4 +1,7 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using BffGateway.Infrastructure.Configuration;
+using BffGateway.Infrastructure.Providers.MockProvider.Endpoints;
 
 namespace BffGateway.Infrastructure.Providers.MockProvider.Health;
 
@@ -6,6 +9,7 @@ public class MockProviderHealthClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<MockProviderHealthClient> _logger;
+    private const string HealthPingPath = MockProviderEndpoints.HealthPing;
 
     public MockProviderHealthClient(HttpClient httpClient, ILogger<MockProviderHealthClient> logger)
     {
@@ -19,7 +23,7 @@ public class MockProviderHealthClient
         {
             _logger.LogDebug("Performing MockProvider health check");
 
-            var response = await _httpClient.GetAsync("/api/ping", cancellationToken);
+            var response = await _httpClient.GetAsync(HealthPingPath, cancellationToken);
             var isHealthy = response.StatusCode != System.Net.HttpStatusCode.ServiceUnavailable;
 
             _logger.LogDebug("MockProvider health check result: {IsHealthy}", isHealthy);

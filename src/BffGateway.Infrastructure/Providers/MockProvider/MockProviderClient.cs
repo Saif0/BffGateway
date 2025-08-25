@@ -6,6 +6,8 @@ using BffGateway.Infrastructure.Providers.MockProvider.Auth;
 using BffGateway.Infrastructure.Providers.MockProvider.Health;
 using BffGateway.Infrastructure.Providers.MockProvider.Payments;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using BffGateway.Infrastructure.Configuration;
 
 namespace BffGateway.Infrastructure.Providers.MockProvider;
 

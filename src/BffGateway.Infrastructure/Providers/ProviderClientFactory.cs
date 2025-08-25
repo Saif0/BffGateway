@@ -3,6 +3,8 @@ using BffGateway.Application.Abstractions.Providers;
 using BffGateway.Infrastructure.Providers.MockProvider;
 using Microsoft.Extensions.Logging;
 using System.Net.Http;
+using Microsoft.Extensions.Options;
+using BffGateway.Infrastructure.Configuration;
 
 namespace BffGateway.Infrastructure.Providers;
 
