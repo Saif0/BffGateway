@@ -1,125 +1,109 @@
-# BFF Gateway - Backend-for-Frontend Service
+# BFF Gateway (.NET 8) – Auth and Payments
 
-A production-grade Backend-for-Frontend (BFF) service built with .NET 8 that provides a unified API for authentication and payment operations, fronting a third-party provider with comprehensive resiliency, observability, and performance characteristics.
+A production‑grade Backend‑for‑Frontend (BFF) service implemented in .NET 8 that fronts an external provider for authentication and payments. It focuses on clean architecture, resiliency with Polly, structured logging, runtime health, observability with OpenTelemetry/Aspire, explicit API versioning with deprecation, and performance validation with k6.
 
-## Architecture Overview
+## Highlights
 
-This solution follows Clean Architecture principles with clear separation of concerns:
+- No custom mapping libraries (e.g., AutoMapper). Hand‑written mappings for maximum performance and clarity
+- Global exception handling and middleware that standardize RFC 7807 ProblemDetails without leaking internals
+- Serilog structured JSON logs; logs all inbound/outbound HTTP with sensitive data masking; persisted under `logs/`
+- OpenTelemetry (+Aspire dashboard via Docker) for traces and metrics; optional Serilog OTLP sink
+- Localization-driven messages and validation using FluentValidation; multi-language resources (`en`, `ar`)
+- Polly per‑client policies (retry with jitter, circuit breaker, timeouts) using `IHttpClientFactory`
+- CQRS with MediatR and Clean Architecture boundaries
+- API Versioning (URL segments) with v1 deprecated and v2 current; deprecation headers injected by middleware and reflected in Swagger
+- k6 scripts to validate targets (1000 rps, 10m, p95 < 150 ms, error < 1%) and to demonstrate circuit breaker behavior
+- Docker Compose and Makefile for easy local runs; MockProvider simulates latency and failures (502/408/429)
 
-- **WebApi Layer**: Controllers, API versioning, health checks, and HTTP pipeline configuration
-- **Application Layer**: CQRS with MediatR, business logic, and validation
-- **Infrastructure Layer**: HTTP client implementations, Polly policies, and external service integration
+## Solution Structure
 
-## Features
+- `src/BffGateway.WebApi`: Controllers, DI, pipeline, versioning, health, swagger, program entry
+- `src/BffGateway.Application`: CQRS commands/handlers, DTOs, interfaces, validators, behaviors
+- `src/BffGateway.Infrastructure`: Provider clients, Polly policies, handlers, logging, configuration
+- `src/MockProvider`: Local mock provider to simulate real provider behavior and failure modes
+- `performanceTesting`: k6 load and circuit-breaker scripts + config
+- `tests`: Unit tests for Application layer
 
-### Core Functionality
-
-- ✅ **Authentication Endpoint** (`/v1/auth/login`) - Username/password authentication with JWT tokens
-- ✅ **Payment Endpoint** (`/v1/payments`) - Payment processing with provider integration
-- ✅ **API Versioning** - Support for v1 and v2 endpoints with different response formats
-- ✅ **Input Validation** - FluentValidation for request validation
-- ✅ **CQRS Pattern** - Command Query Responsibility Segregation with MediatR
-
-### Resiliency & Performance
-
-- ✅ **HTTP Client Policies** - Retry with exponential backoff and jitter
-- ✅ **Circuit Breaker** - Automatic failure detection and recovery
-- ✅ **Timeouts** - Configurable connection and request timeouts
-- ✅ **Load Testing** - k6 scripts with performance thresholds (p95 < 150ms, error rate < 1%)
-- ✅ **Benchmarking** - BenchmarkDotNet for serialization performance
-
-### Observability
-
-- ✅ **Health Checks** - Live (`/health/live`) and ready (`/health/ready`) endpoints
-- ✅ **Structured Logging** - Serilog with correlation IDs
-- ✅ **OpenAPI Documentation** - Swagger UI for API exploration
-- ✅ **Request Logging** - HTTP request/response logging with timing
-
-### Security
-
-- ✅ **Input Validation** - Safe error messages without internal details
-- ✅ **No Credential Storage** - Stateless service design
-- ✅ **Bearer Token Forwarding** - Pass-through authentication to provider
-
-## Quick Start
+## Run locally
 
 ### Prerequisites
 
 - .NET 8 SDK
-- k6 (for load testing)
+- NodeJS optional (for k6 via binaries) or install k6 CLI
+- Docker (optional, for Aspire dashboard and containerized run)
 
-### Running the Services
+### Quick start (terminal tabs)
 
-1. **Start the Mock Provider** (Terminal 1):
-
-```bash
-cd src/MockProvider
-dotnet run
-```
-
-The mock provider will start on http://localhost:5001
-
-2. **Start the BFF Gateway** (Terminal 2):
+1. Start Mock Provider
 
 ```bash
-cd src/BffGateway.WebApi
-dotnet run
+make run-provider
+# exposes http://localhost:5001 by default (compose uses :5001->:8080)
 ```
 
-The BFF Gateway will start on http://localhost:5000
-
-3. **Verify Health Checks**:
+2. Start BFF Gateway
 
 ```bash
-# Liveness check
-curl http://localhost:5000/health/live
-
-# Readiness check (includes provider connectivity)
-curl http://localhost:5000/health/ready
+make run-gateway
+# exposes http://localhost:5180 by default (from Makefile)
 ```
 
-### API Usage Examples
+3. Open Swagger (development)
 
-#### Authentication (v1)
+- `http://localhost:5180/swagger`
+
+4. Health
 
 ```bash
-curl -X POST http://localhost:5000/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "testuser",
-    "password": "password123"
-  }'
+curl http://localhost:5180/health/live
+curl http://localhost:5180/health/ready
 ```
 
-Response:
+### Docker Compose (with Aspire dashboard)
+
+```bash
+make docker-up
+# BFF: http://localhost:5180
+# MockProvider: http://localhost:5001
+# Aspire dashboard (UI): http://localhost:18888 (traces/metrics)
+```
+
+Stop/remove:
+
+```bash
+make docker-down
+```
+
+## API
+
+### Versions
+
+- v1: Deprecated (still callable); deprecation headers are injected
+- v2: Current
+
+### Auth
+
+- v1: `POST /v1/auth/login`
+- v2: `POST /v2/auth/login`
+
+Request (v2):
+
+```json
+{
+  "username": "testuser",
+  "password": "PaPassword123"
+}
+```
+
+Response (v2):
 
 ```json
 {
   "isSuccess": true,
-  "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresAt": "2024-01-15T10:30:00.000Z"
-}
-```
-
-#### Authentication (v2) - Enhanced Response Format
-
-```bash
-curl -X POST http://localhost:5000/v2/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "testuser",
-    "password": "password123"
-  }'
-```
-
-Response:
-
-```json
-{
-  "success": true,
+  "message": "Login successful",
   "token": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expiresAt": "2024-01-15T10:30:00.000Z",
+    "accessToken": "<jwt>",
+    "expiresAt": "2025-01-01T10:30:00Z",
     "tokenType": "Bearer"
   },
   "user": {
@@ -128,399 +112,202 @@ Response:
 }
 ```
 
-#### Payment Processing
+### Payments
 
-```bash
-curl -X POST http://localhost:5000/v1/payments \
-  -H "Content-Type: application/json" \
-  -d '{
-    "amount": 100.50,
-    "currency": "USD",
-    "destinationAccount": "ACC123456"
-  }'
+- v1: `POST /v1/payments` (deprecated)
+- v2: `POST /v2/payments`
+
+Request (v2):
+
+```json
+{
+  "amount": 100.5,
+  "currency": "USD",
+  "destinationAccount": "ACC123456"
+}
 ```
 
-Response:
+Response (v2):
 
 ```json
 {
   "isSuccess": true,
-  "paymentId": "12345678-1234-1234-1234-123456789012",
-  "providerReference": "PROV_20240115103000_1234",
-  "processedAt": "2024-01-15T10:30:00.000Z"
+  "message": "Payment processed successfully",
+  "paymentId": "c9b9f4d8-27b8-4a6f-bf6c-2b5c7c7c9f90",
+  "providerReference": "PROV_20250101_103000_1234",
+  "processedAt": "2025-01-01T10:30:00Z"
 }
+```
+
+### Deprecation headers (v1 only)
+
+- `Deprecation: true`
+- `Sunset: Wed, 31 Dec 2025 23:59:59 GMT`
+- `Link: </swagger/v2/swagger.json>; rel=successor-version`
+- `Warning: 299 - "v1 is deprecated; migrate to v2"`
+
+## Mapping to Provider
+
+Provider endpoints (MockProvider):
+
+- `POST /api/authenticate` with `{ user, pwd }`
+- `POST /api/pay` with `{ total, curr, dest }`
+
+BFF normalizes requests and responses:
+
+- Auth: `username/password` → provider `{ user, pwd }` → BFF `{ isSuccess, jwt, expiresAt }` (v1) or token shape (v2)
+- Payment: `{ amount, currency, destinationAccount }` → provider `{ total, curr, dest }` → BFF `{ isSuccess, paymentId, providerReference, processedAt }`
+
+No AutoMapper is used; DTOs and mapping are implemented manually for performance and explicitness.
+
+## Resiliency (Polly per client)
+
+Configured in `BffGateway.Infrastructure.DependencyInjection`:
+
+- Retry with exponential backoff and jitter for `5xx/408/HttpRequestException/TimeoutRejectedException`
+- Circuit Breaker with open/half‑open/reset events logged
+- Timeouts: connection and overall request
+- Handlers order: logging → forward headers (Authorization, `X‑Correlation‑ID`) → circuit breaker → retry → timeout
+
+Key settings (default; override via env vars):
+
+- `Provider__TimeoutSeconds = 30`
+- `Provider__ConnectTimeoutSeconds = 10`
+- `Provider__Retry__MaxRetries = 3`
+- `Provider__Retry__BaseDelayMs = 1000`
+- `Provider__Retry__MaxJitterMs = 500`
+- `Provider__CircuitBreaker__FailureThreshold = 5`
+- `Provider__CircuitBreaker__DurationOfBreakSeconds = 30`
+
+## Observability
+
+- Serilog structured JSON logs (console + file). Optional OTLP sink when `Observability:EnableSerilogOtlpSink=true`
+- OpenTelemetry traces and metrics when `Observability:EnableOpenTelemetry=true`
+- Aspire dashboard via compose (`dashboard` service) for end‑to‑end visibility
+- Correlation propagated end‑to‑end with `X‑Correlation‑ID`
+
+Environment flags:
+
+- `Observability__EnableSerilog=true|false`
+- `Observability__EnableOpenTelemetry=true|false`
+- `Observability__EnableSerilogOtlpSink=true|false`
+- `Observability__Otlp__Endpoint=http://dashboard:18889`
+- `Observability__Otlp__Protocol=Grpc|HttpProtobuf`
+
+## Security
+
+- No credentials stored; service is stateless
+- Forwards inbound `Authorization` header to the provider
+- Global exception handler returns safe ProblemDetails; no internal details leaked
+- Sensitive data masked in logs (headers: Authorization, cookies; body fields: password, token, cardNumber, cvv, etc.)
+
+## Localization & Validation
+
+- FluentValidation on commands; localized messages (`Resources/Messages.resx` + `Messages.ar.resx`)
+- Accept-Language header supported; responses include localized titles/details for ProblemDetails and messages
+
+## Health Endpoints
+
+- `/health/live`: liveness
+- `/health/ready`: readiness; includes lightweight provider check and returns 503 when degraded/unhealthy (e.g., circuit open)
+
+## Performance & Load
+
+Targets (sustained with provider avg 80 ms):
+
+- p95 latency < 150 ms
+- error rate < 1%
+- throughput ~1000 rps for 10 minutes
+
+Run load tests (defaults can be overridden via env):
+
+```bash
+# Quick 1m test
+make bff-load-quick
+
+# Sustained 10m test
+make bff-load-heavy
+```
+
+Env knobs for k6 (see `performanceTesting/config.js`):
+
+- `BFF_BASE_URL` (default `http://localhost:5180`)
+- `BFF_RPS` (default `1000`)
+- `BFF_DURATION` (e.g., `10m`)
+- `BFF_PREALLOC_VUS`, `BFF_MAX_VUS`
+- `BFF_P95_MS` (default `150`)
+
+Circuit breaker demonstration:
+
+```bash
+make circuit-breaker
 ```
 
 ## Configuration
 
-### Environment Variables
+Config via `appsettings*.json` and environment variables. Missing required settings for enabled features fail fast.
 
-| Variable                                           | Default                 | Description                       |
-| -------------------------------------------------- | ----------------------- | --------------------------------- |
-| `Provider__BaseUrl`                                | `http://localhost:5001` | Mock provider base URL            |
-| `Provider__TimeoutSeconds`                         | `30`                    | HTTP request timeout              |
-| `Provider__ConnectTimeoutSeconds`                  | `10`                    | Connection timeout                |
-| `Provider__Retry__MaxRetries`                      | `3`                     | Maximum retry attempts            |
-| `Provider__Retry__BaseDelayMs`                     | `1000`                  | Base retry delay                  |
-| `Provider__CircuitBreaker__FailureThreshold`       | `5`                     | Circuit breaker failure threshold |
-| `Provider__CircuitBreaker__DurationOfBreakSeconds` | `30`                    | Circuit breaker open duration     |
+- Provider
+  - `Provider__BaseUrl` (compose sets `http://mockprovider:8080`)
+  - `Provider__TimeoutSeconds`, `Provider__ConnectTimeoutSeconds`
+  - `Provider__Retry__MaxRetries`, `Provider__Retry__BaseDelayMs`, `Provider__Retry__MaxJitterMs`
+  - `Provider__CircuitBreaker__FailureThreshold`, `Provider__CircuitBreaker__DurationOfBreakSeconds`
+- Observability
+  - `Observability__EnableSerilog`, `Observability__EnableOpenTelemetry`, `Observability__EnableSerilogOtlpSink`
+  - `Observability__Otlp__Endpoint`, `Observability__Otlp__Protocol`
+- Logging masking (`LoggingMasking` section)
+- Localization (`Localization` section)
 
-### Configuration Files
+Note: This project follows a “no hidden defaults” mindset for critical toggles: if you enable OTLP exporters or sinks, endpoint/protocol must be provided, otherwise startup fails clearly.
 
-- `appsettings.json` - Base configuration
-- `appsettings.Development.json` - Development overrides
+## Extending Providers
 
-## Performance Testing
+- Implement `IProviderClient` for the new provider
+- Register a named `HttpClient` with specific policies/timeouts
+- Add a case in `ProviderClientFactory` (or register via DI)
+- Update `appsettings` for base URL and policy tuning
 
-### Load Testing with k6
+Example endpoints supported today:
 
-Run the comprehensive load test that simulates 1000 concurrent users:
+- `MockProvider` with `Auth`, `Payments`, and `Ping` for readiness
+- Structure allows easy addition (e.g., Stripe) without affecting BFF contracts
 
-```bash
-cd performance
-k6 run load-test.js
-```
+## Tests
 
-**Performance Targets:**
-
-- **Throughput**: 1000 requests/second sustained for 10 minutes
-- **Latency**: p95 < 150ms
-- **Error Rate**: < 1%
-- **Provider Response**: Average 80ms
-
-The test includes:
-
-- Authentication endpoint testing (v1 and v2)
-- Payment endpoint testing
-- Health check validation
-- Error rate monitoring
-- Response time tracking
-
-### Micro-benchmarks
-
-Run BenchmarkDotNet tests for serialization performance:
+- Unit tests for Application layer
 
 ```bash
-cd tests/BffGateway.Benchmarks
-dotnet run -c Release
+make tests-run-all
+# or
+dotnet test tests/BffGateway.Application.Tests/
 ```
-
-## API Versioning Strategy
-
-### Current Versions
-
-- **v1**: Original API format with simple response structures
-- **v2**: Enhanced API format with structured token and user information
-
-### Version Selection
-
-You can specify the API version in two ways:
-
-1. **URL Segment** (Recommended):
-
-   ```
-   GET /v1/auth/login
-   GET /v2/auth/login
-   ```
-
-2. **Header-based**:
-   ```
-   X-Api-Version: 1.0
-   X-Api-Version: 2.0
-   ```
-
-### Deprecation Strategy
-
-When introducing breaking changes:
-
-1. **Phase 1**: Introduce new version (v2) alongside existing (v1)
-2. **Phase 2**: Mark old version as deprecated in OpenAPI spec
-3. **Phase 3**: Add deprecation warnings to response headers
-4. **Phase 4**: Remove deprecated version after migration period
-
-### Migration Example: v1 to v2
-
-**v1 Login Response:**
-
-```json
-{
-  "isSuccess": true,
-  "jwt": "token...",
-  "expiresAt": "2024-01-15T10:30:00.000Z"
-}
-```
-
-**v2 Login Response:**
-
-```json
-{
-  "success": true,
-  "token": {
-    "accessToken": "token...",
-    "expiresAt": "2024-01-15T10:30:00.000Z",
-    "tokenType": "Bearer"
-  },
-  "user": {
-    "username": "testuser"
-  }
-}
-```
-
-## Health Endpoints
-
-### Liveness Check (`/health/live`)
-
-- **Purpose**: Indicates if the application is running
-- **Checks**: Basic application health
-- **Use Case**: Kubernetes liveness probe
-
-### Readiness Check (`/health/ready`)
-
-- **Purpose**: Indicates if the application is ready to serve traffic
-- **Checks**: Application health + provider connectivity
-- **Use Case**: Kubernetes readiness probe, load balancer health checks
-
-### Health States
-
-- **Healthy**: All checks pass
-- **Degraded**: Application is running but provider has issues
-- **Unhealthy**: Critical failures detected
-
-Example responses:
-
-**Healthy:**
-
-```json
-{
-  "status": "Healthy",
-  "totalDuration": "00:00:00.0123456",
-  "entries": {
-    "self": {
-      "status": "Healthy"
-    },
-    "provider": {
-      "status": "Healthy",
-      "description": "Provider is responding"
-    }
-  }
-}
-```
-
-**Degraded:**
-
-```json
-{
-  "status": "Degraded",
-  "totalDuration": "00:00:00.0567890",
-  "entries": {
-    "self": {
-      "status": "Healthy"
-    },
-    "provider": {
-      "status": "Degraded",
-      "description": "Provider is not responding properly"
-    }
-  }
-}
-```
-
-## Resiliency Patterns
-
-### Retry Policy
-
-- **Strategy**: Exponential backoff with jitter
-- **Conditions**: HTTP 5xx, 408, HttpRequestException, TimeoutRejectedException
-- **Max Attempts**: 3 (configurable)
-- **Base Delay**: 1000ms with up to 500ms jitter
-
-### Circuit Breaker
-
-- **Failure Threshold**: 5 consecutive failures
-- **Break Duration**: 30 seconds
-- **Sampling Window**: 60 seconds
-- **Minimum Throughput**: 10 requests
-
-### Timeouts
-
-- **Connection Timeout**: 10 seconds
-- **Request Timeout**: 30 seconds
-- **Overall Policy Timeout**: 30 seconds
-
-## Error Handling
-
-### Error Response Format
-
-All errors return consistent problem details:
-
-```json
-{
-  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-  "title": "Bad Request",
-  "status": 400,
-  "detail": "Username is required",
-  "instance": "/v1/auth/login"
-}
-```
-
-### Error Categories
-
-1. **Validation Errors** (400): Invalid input data
-2. **Authentication Errors** (401): Invalid credentials
-3. **Provider Errors** (502): External service failures
-4. **Circuit Breaker Open** (503): Temporary service unavailability
-5. **Timeout Errors** (504): Request timeout exceeded
-
-## Logging
-
-### Structured Logging
-
-All logs include:
-
-- **Timestamp**: ISO 8601 format
-- **Level**: Debug, Information, Warning, Error, Fatal
-- **Message**: Human-readable description
-- **Properties**: Structured data (user ID, correlation ID, etc.)
-- **Exception**: Full exception details when applicable
-
-### Log Correlation
-
-Each request gets a unique correlation ID that flows through:
-
-- HTTP request logging
-- Application logs
-- Provider calls
-- Error logs
-
-Example log entry:
-
-```json
-{
-  "@timestamp": "2024-01-15T10:30:00.123Z",
-  "@level": "Information",
-  "@message": "Processing login request for username: {Username}",
-  "Username": "testuser",
-  "CorrelationId": "abc123-def456-ghi789",
-  "RequestPath": "/v1/auth/login",
-  "RequestMethod": "POST"
-}
-```
-
-## Testing Strategy
-
-### Load Testing Methodology
-
-1. **Baseline Performance**: Single user, single request
-2. **Ramp-up Testing**: Gradual increase to target load
-3. **Sustained Load**: Maintain target load for duration
-4. **Stress Testing**: Beyond normal capacity
-5. **Recovery Testing**: Service recovery after failures
-
-### Test Scenarios
-
-1. **Happy Path**: Normal authentication and payment flows
-2. **Error Conditions**: Invalid inputs, provider failures
-3. **Circuit Breaker**: Sustained failures and recovery
-4. **Version Compatibility**: Both v1 and v2 endpoints
-5. **Health Checks**: Liveness and readiness validation
-
-## Extending the Service
-
-### Adding a New Provider
-
-1. **Implement Interface**: Create new `IProviderClient` implementation
-2. **Add Configuration**: Provider-specific settings
-3. **Register Service**: Update DI configuration
-4. **Add Health Check**: Provider-specific health validation
-5. **Update Tests**: Load tests and benchmarks
-
-Example:
-
-```csharp
-public class NewProviderClient : IProviderClient
-{
-    public async Task<ProviderAuthResponse> AuthenticateAsync(
-        ProviderAuthRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        // Implementation for new provider
-    }
-}
-```
-
-### Adding New Endpoints
-
-1. **Define Contract**: Request/response models
-2. **Create Command**: MediatR command and handler
-3. **Add Validation**: FluentValidation rules
-4. **Implement Controller**: API endpoint with versioning
-5. **Update Documentation**: OpenAPI specification
-6. **Add Tests**: Unit tests and load tests
 
 ## Known Limitations
 
-1. **Provider Timeout**: Fixed 5-second timeout for test scenarios
-2. **Memory Usage**: No persistent state, but HTTP client pooling
-3. **Correlation IDs**: Basic implementation without distributed tracing
-4. **Circuit Breaker**: Per-instance, not distributed
-5. **Rate Limiting**: Not implemented (would be added for production)
+- No rate limiting; would be added for production traffic control
+- Circuit breaker is in‑process (per instance); distributed breaker would require external coordination
+- v1 kept for demonstration; plan sunset per deprecation headers
 
-## Production Considerations
+## How this meets the assignment
 
-### Deployment
+- Clean architecture, CQRS, typed `HttpClient`, Polly policies per client
+- Strict timeouts, async end‑to‑end; thread pool not blocked
+- Health endpoints for live/ready; readiness reflects provider state and breaker
+- Structured logs, correlation, OpenTelemetry traces/metrics, Swagger docs
+- Explicit API versioning; v1 deprecated with headers and Swagger labeling; v2 shows contract evolution
+- Security: safe errors, no secrets persisted, bearer forwarded
+- Performance validated with k6 scripts and thresholds
 
-- **Container**: Docker image with health checks
-- **Kubernetes**: Deployment with liveness/readiness probes
-- **Load Balancer**: Health check integration
-- **Monitoring**: Application metrics and logging
+## Makefile cheatsheet
 
-### Security
-
-- **HTTPS**: TLS termination at load balancer
-- **API Gateway**: Rate limiting and authentication
-- **Secrets**: External configuration for sensitive data
-- **CORS**: Configure for frontend domains
-
-### Scaling
-
-- **Horizontal**: Stateless design supports multiple instances
-- **Resource Limits**: CPU and memory limits in containers
-- **Connection Pooling**: HTTP client connection management
-- **Caching**: Response caching for frequently accessed data
-
-## Development Setup
-
-### IDE Configuration
-
-- **Visual Studio**: Solution file included
-- **VS Code**: Recommended extensions for C# development
-- **JetBrains Rider**: Full solution support
-
-### Debugging
-
-- **Breakpoints**: Full debugging support in all layers
-- **Logging**: Structured logs in console during development
-- **Health Checks**: Verify service dependencies
-
-### Code Quality
-
-- **Analyzers**: Built-in .NET analyzers enabled
-- **Formatting**: EditorConfig for consistent style
-- **Testing**: Unit tests for critical business logic
-
-## Support and Maintenance
-
-### Monitoring
-
-- **Health Endpoints**: Automated monitoring integration
-- **Metrics**: Performance counters and custom metrics
-- **Alerts**: Circuit breaker state changes, error rates
-- **Dashboards**: Request volume, latency, error rates
-
-### Troubleshooting
-
-- **Logs**: Centralized logging with correlation IDs
-- **Health Checks**: Detailed component status
-- **Circuit Breaker**: Automatic failure isolation
-- **Timeouts**: Clear timeout boundaries
-
-For questions or issues, refer to the structured logging output and health check endpoints for diagnostic information.
+```bash
+make help
+make run-provider
+make run-gateway
+make bff-load-quick
+make bff-load-heavy
+make circuit-breaker
+make docker-up
+make docker-down
+make tests-run-all
+```
