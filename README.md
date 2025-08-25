@@ -171,6 +171,8 @@ BffGateway/
 ```bash
 make run-provider
 # exposes http://localhost:5001 by default (compose uses :5001->:8080)
+# OR without make:
+cd src/MockProvider && dotnet run -c Release --urls "http://localhost:5001"
 ```
 
 2. Start BFF Gateway
@@ -178,6 +180,8 @@ make run-provider
 ```bash
 make run-gateway
 # exposes http://localhost:5180 by default (from Makefile)
+# OR without make:
+cd src/BffGateway.WebApi && dotnet run -c Release --urls "http://localhost:5180"
 ```
 
 3. Open Swagger (development)
@@ -198,12 +202,28 @@ make docker-up
 # BFF: http://localhost:5180
 # MockProvider: http://localhost:5001
 # Aspire dashboard (UI): http://localhost:18888 (traces/metrics)
+# OR without make:
+docker compose up --build -d
 ```
 
 Stop/remove:
 
 ```bash
 make docker-down
+# OR without make:
+docker compose down
+```
+
+Logs and restart:
+
+```bash
+make docker-logs    # Tail logs
+# OR without make:
+docker compose logs -f
+
+make docker-restart # Restart stack
+# OR without make:
+docker compose down && docker compose up --build -d
 ```
 
 ## API
@@ -429,6 +449,11 @@ if (scenario == SimulationScenario.LimitExceeded)
 ```bash
 make bff-load-quick
 # BFF_RPS=1000 BFF_DURATION=1m
+# OR without make:
+BFF_BASE_URL=http://localhost:5180 \
+BFF_RPS=1000 BFF_DURATION=1m \
+BFF_PREALLOC_VUS=200 BFF_MAX_VUS=1000 \
+k6 run performanceTesting/load-test.js
 ```
 
 > **📹 [Quick Load Test Demo - 1 Minute @ 1000 RPS]**
@@ -441,6 +466,11 @@ make bff-load-quick
 ```bash
 make bff-load-heavy
 # BFF_RPS=1000 BFF_DURATION=10m BFF_MAX_VUS=1000
+# OR without make:
+BFF_BASE_URL=http://localhost:5180 \
+BFF_RPS=1000 BFF_DURATION=10m \
+BFF_PREALLOC_VUS=200 BFF_MAX_VUS=1000 \
+k6 run performanceTesting/load-test.js
 ```
 
 > **📹 [Production Load Test Demo - 10 Minutes @ 1000 RPS]**
@@ -461,12 +491,19 @@ make bff-load-heavy
 
 ```bash
 make circuit-breaker
+# OR without make:
+BFF_BASE_URL=http://localhost:5180 \
+BFF_CB_BREAK_SECONDS=30 \
+BFF_CB_CLOSE_BUFFER_SECONDS=5 \
+k6 run performanceTesting/circuit-breaker-test.js
 ```
 
 **Custom Load Test:**
 
 ```bash
 BFF_RPS=1500 BFF_DURATION=5m make bff-load
+# OR without make:
+BFF_RPS=1500 BFF_DURATION=5m k6 run performanceTesting/load-test.js
 ```
 
 ### 📈 Resource Utilization Under Load
@@ -911,8 +948,10 @@ Example endpoints supported today:
 
 ```bash
 make tests-run-all
-# or
+# OR without make:
 dotnet test tests/BffGateway.Application.Tests/
+# or run all tests in solution
+dotnet test
 ```
 
 ## Known Limitations
