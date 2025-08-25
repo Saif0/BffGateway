@@ -36,7 +36,24 @@ public class StructuredHttpLoggingHandler : DelegatingHandler
         var requestId = Guid.NewGuid().ToString();
         var stopwatch = Stopwatch.StartNew();
 
+        // Resolve correlation id from outbound request headers or fall back to current trace id
+        string? correlationId = null;
+        if (request.Headers.TryGetValues("X-Correlation-ID", out var headerValues))
+        {
+            using var enumerator = headerValues?.GetEnumerator();
+            if (enumerator != null && enumerator.MoveNext())
+            {
+                correlationId = enumerator.Current;
+            }
+        }
+        if (string.IsNullOrWhiteSpace(correlationId))
+        {
+            correlationId = Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString();
+        }
+        Activity.Current?.SetTag("correlation.id", correlationId);
+
         // Use LogContext to add request-scoped properties
+        using (LogContext.PushProperty("CorrelationId", correlationId))
         using (LogContext.PushProperty("RequestId", requestId))
         using (LogContext.PushProperty("RequestType", "Outbound"))
         using (LogContext.PushProperty("TraceId", Activity.Current?.TraceId.ToString()))

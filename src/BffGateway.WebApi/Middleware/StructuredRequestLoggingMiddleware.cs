@@ -34,6 +34,7 @@ public class StructuredRequestLoggingMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var correlationId = GetOrSetCorrelationId(context);
+        Activity.Current?.SetTag("correlation.id", correlationId);
         var requestId = Guid.NewGuid().ToString();
         var stopwatch = Stopwatch.StartNew();
 
