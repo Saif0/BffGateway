@@ -954,22 +954,6 @@ dotnet test tests/BffGateway.Application.Tests/
 dotnet test
 ```
 
-## Known Limitations
-
-- No rate limiting; would be added for production traffic control
-- Circuit breaker is in‑process (per instance); distributed breaker would require external coordination
-- v1 kept for demonstration; plan sunset per deprecation headers
-
-## How this meets the assignment
-
-- Clean architecture, CQRS, typed `HttpClient`, Polly policies per client
-- Strict timeouts, async end‑to‑end; thread pool not blocked
-- Health endpoints for live/ready; readiness reflects provider state and breaker
-- Structured logs, correlation, OpenTelemetry traces/metrics, Swagger docs
-- Explicit API versioning; v1 deprecated with headers and Swagger labeling; v2 shows contract evolution
-- Security: safe errors, no secrets persisted, bearer forwarded
-- Performance validated with k6 scripts and thresholds
-
 ## 🎯 Assignment Requirements - Complete Implementation
 
 ### ✅ Functional Requirements Met
@@ -1075,5 +1059,3 @@ make docker-restart        # Restart stack
 ```
 
 ---
-
-**This BFF Gateway demonstrates senior-level .NET development with production-grade architecture, comprehensive resiliency, enterprise observability, and performance validation that exceeds assignment requirements.**
