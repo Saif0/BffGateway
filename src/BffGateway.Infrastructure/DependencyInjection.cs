@@ -19,6 +19,7 @@ public static class DependencyInjection
     {
         // Configure provider options
         services.Configure<ProviderOptions>(configuration.GetSection(ProviderOptions.SectionName));
+        services.Configure<LoggingMaskingOptions>(configuration.GetSection(LoggingMaskingOptions.SectionName));
 
         // Register required services
         services.AddHttpContextAccessor();

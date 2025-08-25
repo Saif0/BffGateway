@@ -3,6 +3,8 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using BffGateway.Infrastructure.Configuration;
 using Serilog;
 using Serilog.Context;
 
@@ -19,24 +21,13 @@ public class StructuredHttpLoggingHandler : DelegatingHandler
     private readonly HashSet<string> _sensitiveBodyFields;
     private readonly int _maxBodySize;
 
-    public StructuredHttpLoggingHandler(ILogger<StructuredHttpLoggingHandler> logger)
+    public StructuredHttpLoggingHandler(ILogger<StructuredHttpLoggingHandler> logger, IOptions<LoggingMaskingOptions> maskingOptions)
     {
         _logger = logger;
-        _maxBodySize = 8192; // 8KB max body logging
-
-        // Define sensitive headers to mask
-        _sensitiveHeaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "Authorization", "Cookie", "Set-Cookie", "X-API-Key",
-            "Authentication", "Proxy-Authorization", "WWW-Authenticate"
-        };
-
-        // Define sensitive body fields to mask
-        _sensitiveBodyFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "password", "token", "secret", "key", "authorization",
-            "cardNumber", "cvv", "pin", "ssn", "creditCard"
-        };
+        var options = maskingOptions.Value ?? new LoggingMaskingOptions();
+        _maxBodySize = options.MaxBodySize;
+        _sensitiveHeaders = new HashSet<string>(options.SensitiveHeaders, StringComparer.OrdinalIgnoreCase);
+        _sensitiveBodyFields = new HashSet<string>(options.SensitiveBodyFields, StringComparer.OrdinalIgnoreCase);
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(
