@@ -28,6 +28,13 @@ export const options = {
       maxVUs: 5,
       exec: "testCircuitOpen",
     },
+    test_circuit_closed: {
+      executor: "per-vu-iterations",
+      vus: 1,
+      iterations: 1,
+      startTime: "28s", // 5s trigger + 1s gap + 15s open test + 7s buffer
+      exec: "verifyCircuitClosed",
+    },
   },
 };
 
@@ -47,7 +54,7 @@ export function setup() {
 export function generateFailures() {
   const response = http.post(
     `${bff.baseUrl}/v2/auth/login?scenario=Fail`,
-    JSON.stringify({ username: "test", password: "test" }),
+    JSON.stringify({ username: "test", password: "teswqeA123wqte" }),
     { headers: { "Content-Type": "application/json" } }
   );
 
@@ -66,33 +73,77 @@ export function generateFailures() {
 }
 
 export function testCircuitOpen() {
-  const response = http.post(
-    `${bff.baseUrl}/v2/auth/login?scenario=Fail`,
-    JSON.stringify({ username: "test", password: "test" }),
-    { headers: { "Content-Type": "application/json" } }
-  );
+  const response = http.get(`${bff.baseUrl}/health/ready`);
 
-  const isError = response.status >= 400;
-  const isFastFailure = response.timings.duration < 200;
+  let body = {};
+  try {
+    body = response.json();
+  } catch (e) {}
 
-  errorRate.add(isError);
+  const providerStatus = body?.entries?.provider?.status;
+  const providerDesc = body?.entries?.provider?.description || "";
+  const isFast = response.timings.duration < 200;
+  const providerNotResponding =
+    providerStatus === "Degraded" ||
+    /circuit breaker is open/i.test(providerDesc);
 
-  if (isError && isFastFailure) {
+  errorRate.add(response.status >= 400 || providerStatus !== "Healthy");
+
+  if (isFast && providerNotResponding) {
     circuitBreakerCount.add(1);
     console.log(
-      `🔴 CIRCUIT BREAKER DETECTED: ${response.status} in ${response.timings.duration}ms`
+      `🔴 CIRCUIT OPEN (fast ready): status=${response.status} provider=${providerStatus} in ${response.timings.duration}ms`
     );
   }
 
   console.log(
-    `Circuit test: ${response.status} in ${response.timings.duration}ms`
+    `Ready check: status=${response.status} in ${response.timings.duration}ms provider=${providerStatus} desc="${providerDesc}"`
   );
 
   check(response, {
-    "Response received": (r) => r.status !== 0,
+    "Ready response received": (r) => r.status !== 0,
   });
 
   sleep(0.2);
+}
+
+export function verifyCircuitClosed() {
+  const maxWaitSeconds = bff.cbBreakSeconds + bff.cbCloseBufferSeconds + 10;
+  let attempts = 0;
+  let success = false;
+
+  while (attempts < maxWaitSeconds && !success) {
+    const response = http.get(`${bff.baseUrl}/health/ready`);
+    let body = {};
+    try {
+      body = response.json();
+    } catch (e) {}
+
+    const providerStatus = body?.entries?.provider?.status;
+    const isHealthy = response.status === 200 && providerStatus === "Healthy";
+
+    console.log(
+      `Ready health attempt ${attempts + 1}: status=${
+        response.status
+      } provider=${providerStatus}`
+    );
+
+    if (isHealthy) {
+      console.log("🟢 PROVIDER READY: /health/ready shows provider Healthy");
+      success = true;
+      check(response, {
+        "Provider became Healthy on /health/ready": () => true,
+      });
+      break;
+    }
+
+    sleep(1);
+    attempts += 1;
+  }
+
+  if (!success) {
+    check(null, { "Provider did not become Healthy in time": () => false });
+  }
 }
 
 export function teardown(data) {

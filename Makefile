@@ -76,6 +76,9 @@ bff-load-heavy:
 circuit-breaker:
 	@command -v k6 >/dev/null 2>&1 || { echo "k6 is not installed. Install from https://k6.io"; exit 1; }
 	@echo "⚡ Running quick circuit breaker test..."
+	BFF_BASE_URL=$(BFF_BASE_URL) \
+	BFF_CB_BREAK_SECONDS=30 \
+	BFF_CB_CLOSE_BUFFER_SECONDS=5 \
 	k6 run performanceTesting/circuit-breaker-test.js
 
 

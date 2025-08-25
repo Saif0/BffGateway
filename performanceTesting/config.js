@@ -19,4 +19,6 @@ export const bff = {
   p95Ms: num("BFF_P95_MS", 150),
   maxErrorRate: env("BFF_MAX_ERROR_RATE", "0.01"),
   maxHttpFailRate: env("BFF_MAX_HTTP_FAIL_RATE", "0.01"),
+  cbBreakSeconds: num("BFF_CB_BREAK_SECONDS", 30),
+  cbCloseBufferSeconds: num("BFF_CB_CLOSE_BUFFER_SECONDS", 5),
 };
