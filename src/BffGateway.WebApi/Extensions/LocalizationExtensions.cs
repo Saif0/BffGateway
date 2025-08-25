@@ -42,7 +42,7 @@ public static class LocalizationExtensions
             var localizationOptions = configuration.GetSection(LocalizationOptions.SectionName)
                 .Get<LocalizationOptions>() ?? new LocalizationOptions();
 
-            var supportedCultures = localizationOptions.SupportedCultures
+            var supportedCultures = localizationOptions.SupportedLanguages
                 .Select(c => new CultureInfo(c))
                 .ToList();
 

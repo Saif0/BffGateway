@@ -8,9 +8,9 @@ public class LocalizationOptions
     public const string SectionName = "Localization";
 
     /// <summary>
-    /// List of supported culture codes (e.g., "en", "ar")
+    /// List of supported language codes (e.g., "en", "ar")
     /// </summary>
-    public string[] SupportedCultures { get; set; } = { "en" };
+    public string[] SupportedLanguages { get; set; } = { "en" };
 
     /// <summary>
     /// Default culture code
