@@ -11,7 +11,7 @@ This solution **fully satisfies** all BFF .NET Assignment requirements:
 
 | Requirement                  | ✅ Implementation                                             | Technical Approach                                  |
 | ---------------------------- | ------------------------------------------------------------- | --------------------------------------------------- |
-| **Clean Architecture**       | 3-layer separation (WebApi/Application/Infrastructure)        | CQRS with MediatR, no cyclic dependencies           |
+| **Clean Architecture**       | 3-layer separation (WebApi/Application/Infrastructure)        | CQRS with MediatR                                   |
 | **Resiliency & Performance** | Polly per-client policies, 1000 RPS sustained                 | Circuit breaker, retry with jitter, strict timeouts |
 | **API Versioning**           | URL segment versioning with deprecation                       | v1 deprecated with headers, v2 current              |
 | **Health & Observability**   | Live/Ready endpoints + OpenTelemetry/Aspire                   | Structured logging, correlation IDs, metrics        |
@@ -458,8 +458,7 @@ k6 run performanceTesting/load-test.js
 
 > **📹 [Quick Load Test Demo - 1 Minute @ 1000 RPS]**
 >
-> [![asciicast](https://asciinema.org/a/735671.svg)](https://asciinema.org/a/735671)>
-> _Quick validation of BFF Gateway handling 1000 RPS for 1 minute - ideal for development testing_
+> [![asciicast](https://asciinema.org/a/siGJcJ5u5WWnUEqGgTSY31YhP.svg)](https://asciinema.org/a/siGJcJ5u5WWnUEqGgTSY31YhP) > _Quick validation of BFF Gateway handling 1000 RPS for 1 minute - ideal for development testing_
 
 **Production Load Test (10 minutes sustained):**
 
@@ -475,7 +474,7 @@ k6 run performanceTesting/load-test.js
 
 > **📹 [Production Load Test Demo - 10 Minutes @ 1000 RPS]**
 >
-> [![asciicast](https://asciinema.org/a/735682.svg)](https://asciinema.org/a/735682)
+> [![asciicast](https://asciinema.org/a/735828.svg)](https://asciinema.org/a/735828)
 >
 > _Full production load test demonstrating sustained 1000 RPS for 10 minutes with p95 < 150ms and error rate < 1%_
 
